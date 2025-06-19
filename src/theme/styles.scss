@@ -1,0 +1,86 @@
+@reference "./root.css";
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
+root {
+  scrollbar-color: #e8e5fb transparent;
+  scrollbar-width: thin;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  @apply bg-theme-default tracking-tight font-default subpixel-antialiased w-screen h-full overflow-x-hidden overflow-y-auto;
+}
+
+.text-shadow {
+  text-shadow: 0 0 10px rgba(0,0,0,.5);
+}
+
+.box-shadow {
+  box-shadow: 0 0 10px rgba(0,0,0,.5)
+}
+
+.font-size-title {
+  font-size: clamp(1.75rem, 5vw + 1rem, 3.75rem);
+}
+
+button:hover {
+  @apply cursor-pointer;
+}
+
+.maplibregl-ctrl-bottom-right {
+  display: none;
+}
+
+.maplibregl-popup-content {
+  background-color: rgba(255, 255, 255, .9);
+  padding: .5rem .7rem !important;
+  border-radius: 10px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, .5);
+  font-weight: 600;
+}
+
+canvas {
+  border-radius: 16px!important;
+}
+
+.maplibregl-canvas {
+  outline: 0;
+}
+
+::-webkit-scrollbar {
+  @apply w-1.5 h-1.5;
+}
+
+::-webkit-scrollbar-button {
+  @apply w-0 h-0;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-theme-500 border-0 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-theme-500;
+}
+
+::-webkit-scrollbar-thumb:active {
+  @apply bg-theme-500;
+}
+
+::-webkit-scrollbar-track {
+  @apply border-0 rounded-[50px];
+}
+
+::-webkit-scrollbar-corner {
+  @apply bg-transparent;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #e8e5fb inset !important;
+}

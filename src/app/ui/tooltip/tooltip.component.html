@@ -1,0 +1,11 @@
+<div #tooltipContainer class="tooltip-container" [class.widthFull]="full" (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()">
+	<ng-content></ng-content>
+</div>
+<div #tooltip class="tooltip"
+	 *ngIf="content.length > 0"
+	 [class.top]="position === 'top'"
+	 [class.bottom]="position === 'bottom'"
+	 [class.center]="align === 'center'"
+	 [class.left]="align === 'left'"
+	 [class.right]="align === 'right'"
+	 [class.visible]="isTooltipVisible">{{ content }}</div>

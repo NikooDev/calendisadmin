@@ -1,0 +1,4 @@
+<div class="toast" [ngClass]="checkType()">
+	<span>{{ message }}</span>
+	<button *ngIf="actionText" (click)="onAction()">{{ actionText }}</button>
+</div>

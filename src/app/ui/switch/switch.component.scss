@@ -1,0 +1,14 @@
+@reference "./../../../theme/styles.scss";
+
+.switch {
+	@apply flex items-center cursor-pointer;
+
+	&-track {
+		@apply relative inline-block w-10 h-4 rounded-full transition-all ease-in-out duration-200;
+	}
+
+	&-thumb {
+		@apply absolute left-0 -top-[2px] w-5 h-5 bg-white rounded-full transition-transform ease-in-out duration-200;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, .4);
+	}
+}

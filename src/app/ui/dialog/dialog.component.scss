@@ -1,0 +1,52 @@
+@reference "./../../../theme/styles.scss";
+
+.dialog-overlay {
+	@apply fixed top-0 left-0 w-screen h-screen bg-black/70 flex items-center justify-center z-[9999] opacity-0 will-change-contents;
+	animation: fadeIn 0.2s forwards;
+}
+
+.dialog-container {
+	@apply relative bg-white px-[1.2rem] py-4 rounded-2xl shadow-md will-change-transform;
+	transform: scale(0.8);
+	animation: scaleIn 0.2s forwards;
+}
+
+.dialog-titles {
+	@apply mb-4;
+}
+
+.dialog-title {
+	@apply text-2xl font-semibold;
+}
+
+.dialog-subtitle {
+	@apply font-semibold text-sm mt-2 whitespace-break-spaces;
+}
+
+.dialog-content {
+	@apply px-4 py-2;
+}
+
+.dialog-actions {
+	@apply flex gap-4;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes scaleIn {
+	from {
+		transform: scale(0.8);
+		opacity: 0;
+	}
+	to {
+		transform: scale(1);
+		opacity: 1;
+	}
+}

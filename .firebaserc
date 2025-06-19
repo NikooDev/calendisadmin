@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "default": "pompiers-tiffauges"
+  },
+  "targets": {
+      "pompiers-tiffauges": {
+        "hosting": {
+          "calendis": ["default"]
+        }
+      }
+    }
+}

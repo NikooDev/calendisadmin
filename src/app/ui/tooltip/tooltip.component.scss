@@ -1,0 +1,54 @@
+@reference "./../../../theme/styles.scss";
+
+:host {
+	@apply relative flex;
+}
+
+.tooltip-container {
+	@apply relative flex z-10 h-auto w-auto;
+
+  &.widthFull {
+    @apply w-full;
+  }
+}
+
+.tooltip {
+	@apply flex items-center rounded-md select-none whitespace-nowrap pointer-events-none font-medium text-[.9rem] opacity-0 bg-slate-800 absolute h-[2rem] w-fit z-0 text-white transform translate-x-0 translate-y-0 py-[.3rem] px-2.5;
+	transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
+
+	&.visible.top {
+		@apply -top-full;
+	}
+
+	&.visible.bottom {
+		@apply top-full;
+	}
+
+	&.center {
+		@apply top-1/2 left-1/2;
+		transform: translate(-50%, 50%);
+	}
+	&.visible.center {
+		transform: translate(-50%, 15%);
+	}
+
+	&.left {
+		@apply left-0;
+		transform: translate(0, 50%);
+	}
+	&.visible.left {
+		transform: translate(0, 15%);
+	}
+
+	&.right {
+		@apply right-0;
+		transform: translate(0, 50%);
+	}
+	&.visible.right {
+		transform: translate(0, 15%);
+	}
+
+	&.visible {
+		@apply opacity-100 z-10;
+	}
+}

@@ -1,0 +1,35 @@
+<section class="flex justify-center items-center h-screen w-screen bg-theme-700">
+  <div class="text-theme-50 relative z-10 px-4 w-full sm:max-w-[500px]">
+    <div @element class="flex gap-8 items-center justify-center mb-10">
+      <img ngSrc="/img/logo.webp" alt="Logo" priority class="rounded-full w-[100px] h-[100px] box-shadow " [height]="100" [width]="100">
+      <div>
+        <h1 class="text-white font-title text-6xl text-shadow font-size-title">Calendis</h1>
+        <p class="font-title text-2xl text-shadow ml-0.5">Connexion</p>
+      </div>
+    </div>
+    <div @element300 (@element300.done)="onFocus()" class="relative">
+      <app-spinner classname="absolute -top-12 right-4" [pending]="$pending()" [color]="'#fff'" [size]="32" [strokeWidth]="4"></app-spinner>
+      <app-card>
+        <div class="w-full">
+          <form (ngSubmit)="submit()" [formGroup]="authForm" class="flex flex-col" method="post">
+            <div class="flex flex-col mb-4">
+              <label for="email" class="mb-1.5 hover:cursor-pointer">Adresse e-mail</label>
+              <input type="text" id="email" formControlName="email" #emailInput class="bg-white/20 focus-within:bg-white/50 focus-within:text-theme-700 shadow outline-0 rounded-2xl h-12 px-4 font-semibold transition-colors duration-300"/>
+            </div>
+            <div class="flex flex-col mb-6">
+              <label for="password" class="mb-1.5 hover:cursor-pointer">Mot de passe</label>
+              <input type="password" id="password" formControlName="password" class="bg-white/20 focus-within:bg-white/50 focus-within:text-theme-700 shadow outline-0 rounded-2xl h-12 px-4 font-semibold transition-colors duration-300"/>
+            </div>
+            <button type="submit" [disabled]="$pending()" class="flex items-center justify-center relative overflow-hidden outline-0 focus-within:bg-pink-800/80 bg-pink-600/70 hover:bg-pink-800/80 disabled:bg-white/20 disabled:hover:!cursor-default shadow transition-colors duration-200 rounded-2xl h-12 text-lg font-semibold">
+              <span *ngIf="!$pending();else pending">Se connecter</span>
+              <ng-template #pending>Connexion...</ng-template>
+              <div *ngIf="$pending()" class="button-shimmer-wrapper">
+                <div class="button-shimmer-bar"></div>
+              </div>
+            </button>
+          </form>
+        </div>
+      </app-card>
+    </div>
+  </div>
+</section>

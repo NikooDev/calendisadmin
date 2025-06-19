@@ -17,6 +17,18 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
+            "allowedCommonJsDependencies": [
+              "lodash",
+              "maplibre-gl",
+              "@turf/jsts",
+              "rbush",
+              "skmeans",
+              "concaveman",
+              "fast-deep-equal",
+              "earcut",
+              "@supabase/node-fetch",
+              "ws"
+            ],
             "outputPath": "dist/calendisadmin",
             "index": "src/index.html",
             "browser": "src/main.ts",
@@ -30,7 +42,8 @@
               }
             ],
             "styles": [
-              "src/theme/styles.css"
+              "src/theme/root.css",
+              "src/theme/styles.scss"
             ],
             "scripts": []
           },
@@ -39,12 +52,12 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "4MB",
+                  "maximumError": "5MB"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
+                  "maximumWarning": "6kB",
                   "maximumError": "8kB"
                 }
               ],
@@ -92,7 +105,8 @@
               }
             ],
             "styles": [
-              "src/theme/styles.css"
+              "src/theme/root.css",
+              "src/theme/styles.scss"
             ],
             "scripts": []
           }

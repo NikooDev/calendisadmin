@@ -1,0 +1,18 @@
+<div [attr.data-id]="id" *ngIf="isOpen()" class="dialog-overlay" (click)="overlayClose ? close() : false">
+	<div class="dialog-container" (click)="$event.stopPropagation()" [ngStyle]="{'min-width': minWidth ? minWidth : '350px', 'max-width': maxWidth ? maxWidth : '500px', 'max-height': maxHeight}">
+		<div class="dialog-titles">
+			<div class="dialog-title">
+				<ng-content select="[dialog-title]"></ng-content>
+			</div>
+			<div class="dialog-subtitle">
+				<ng-content select="[dialog-subtitle]"></ng-content>
+			</div>
+		</div>
+		<div class="dialog-content">
+			<ng-content select="[dialog-content]"></ng-content>
+		</div>
+		<div class="dialog-actions">
+			<ng-content select="[dialog-actions]"></ng-content>
+		</div>
+	</div>
+</div>

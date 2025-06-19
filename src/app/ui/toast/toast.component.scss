@@ -1,0 +1,82 @@
+@reference "./../../../theme/styles.scss";
+
+.toast {
+  @apply relative flex items-center justify-between sm:rounded-lg font-bold bg-white text-[.9rem] whitespace-break-spaces pr-4 pl-6 py-3 min-w-full sm:min-w-72;
+  box-shadow: 0 0 10px rgba(0, 0, 0, .5);
+
+  & button {
+    @apply rounded-lg ml-3 px-2 sm:py-0.5 py-1 text-[.8rem] font-bold transition-colors duration-200;
+
+    &:hover {
+      cursor: pointer;
+    }
+  }
+
+  &.success {
+    @apply text-green-700;
+
+    & button {
+      @apply bg-green-500/20;
+
+      &:hover {
+        @apply bg-green-500/30 text-green-800;
+      }
+    }
+  }
+
+  &.warning {
+    @apply text-orange-700;
+
+    & button {
+      @apply bg-orange-400/20;
+
+      &:hover {
+        @apply bg-orange-500/30 text-orange-800;
+      }
+    }
+  }
+
+  &.error {
+    @apply text-red-700;
+
+    & button {
+      @apply bg-red-400/20;
+
+      &:hover {
+        @apply bg-red-500/30 text-red-800;
+      }
+    }
+  }
+
+  &.info {
+    @apply text-slate-700;
+
+    & button {
+      @apply bg-slate-400/20;
+
+      &:hover {
+        @apply bg-slate-500/30 text-slate-800;
+      }
+    }
+  }
+
+  &:after {
+    @apply content-[""] mt-[-0.875rem] top-1/2 left-2 flex w-1 h-7 rounded-lg absolute;
+  }
+
+  &.success:after {
+    @apply bg-green-700;
+  }
+
+  &.warning:after {
+    @apply bg-orange-700;
+  }
+
+  &.error:after {
+    @apply bg-red-700;
+  }
+
+  &.info:after {
+    @apply bg-slate-700;
+  }
+}

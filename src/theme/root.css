@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: PaytoneOne-Regular;
+  font-display: swap;
+  src: url("/fonts/PaytoneOne-Regular.ttf") format("truetype");
+}
+
+@theme {
+  --color-theme-default: #F2F4F7;
+  --color-theme-50:  rgb(231, 234, 248);
+  --color-theme-100: rgb(206, 212, 244);
+  --color-theme-200: rgb(165, 173, 236);
+  --color-theme-300: rgb(124, 165, 227);
+  --color-theme-400: rgb(83, 121, 218);
+  --color-theme-500: rgb(35, 74, 174);
+  --color-theme-600: rgb(28, 46, 139);
+  --color-theme-700: rgb(21, 35, 104);
+  --color-theme-800: rgb(14, 23, 70);
+  --color-theme-900: rgb(7, 12, 35);
+  --color-theme-950: rgb(4, 7, 20);
+  --color-theme-red: rgb(209, 20, 20);
+  --font-title: PaytoneOne-Regular, sans-serif;
+  --font-default: Raleway, sans-serif;
+}
