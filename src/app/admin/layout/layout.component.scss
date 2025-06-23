@@ -1,3 +1,38 @@
 .layout-shadow {
   box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.3);
 }
+
+.menu-toggle-bar {
+  display: block;
+  position: absolute;
+  width: 22px;
+  height: 2.5px;
+  border-radius: 4px;
+  background-color: white;
+  transition: all 0.3s ease;
+
+  &.menu-toggle-bar--top {
+    transform: translate(0, -7px);
+  }
+
+  &.menu-toggle-bar--middle {
+  }
+
+  &.menu-toggle-bar--bottom {
+    transform: translate(0, 7px);
+  }
+
+  .nav-open & {
+    &.menu-toggle-bar--top {
+      transform: translate(0, 0) rotate(45deg);
+    }
+
+    &.menu-toggle-bar--middle {
+      opacity: 0;
+    }
+
+    &.menu-toggle-bar--bottom {
+      transform: translate(0, 0) rotate(-45deg);
+    }
+  }
+}

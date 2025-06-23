@@ -4,16 +4,6 @@ export interface AdressRecord {
   lat: number;
   numero: string;
   nom_voie: string;
-  status?: AddressStatus
-}
-
-export enum AddressStatus {
-  toDo = 'to-do',
-  doneWithDistribution = 'done-with-distribution',
-  refused = 'refused',
-  retake = 'retake',
-  absence = 'absence',
-  noMore = 'no-more',
 }
 
 export type PolygonWithMeta = {

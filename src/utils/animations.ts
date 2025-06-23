@@ -39,20 +39,6 @@ export const scaleIn = trigger('scaleIn', [
   ])
 ]);
 
-export const listUsersSearch = trigger('listUsersSearch', [
-  transition('* => *', [
-    query(':enter', [
-      style({ opacity: 0 }),
-      stagger(100, [
-        animate(
-          '.5s ease-in-out',
-          style({ opacity: 1 })
-        )
-      ])
-    ], { optional: true })
-  ])
-]);
-
 export const slideInSector = trigger('slideInSector', [
   transition('void => *', [
     query(':enter', [

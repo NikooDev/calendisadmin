@@ -9,8 +9,6 @@ import {
 import {HttpClient} from '@angular/common/http';
 import {Observable, of, ReplaySubject, Subscription, switchMap} from 'rxjs';
 import {Router} from '@angular/router';
-import {UserStatus} from '../types/user';
-import {doc, Firestore, updateDoc} from '@angular/fire/firestore';
 
 @Injectable({
   providedIn: 'root'
@@ -21,10 +19,6 @@ export class AuthService implements OnDestroy {
   public auth$ = new ReplaySubject<User | null>(1);
 
   private httpClient = inject(HttpClient);
-
-  protected firestore = inject(Firestore);
-
-  private userUID!: string;
 
   private router = inject(Router);
 
@@ -46,7 +40,6 @@ export class AuthService implements OnDestroy {
   public initAuth() {
     this.auth.onAuthStateChanged(user => {
       if (user) {
-        this.userUID = user.uid;
        this.auth$.next(user);
       } else {
         this.auth$.next(null);
@@ -67,9 +60,6 @@ export class AuthService implements OnDestroy {
       })
     ).subscribe(result => {
       if (result === false) {
-        if (this.userUID) {
-          this.logout().then();
-        }
         this.auth$.next(null);
       }
     });
@@ -141,14 +131,6 @@ export class AuthService implements OnDestroy {
   }
 
   public async logout(): Promise<void> {
-    if (this.userUID) {
-      const docRef = doc(this.firestore, `users/${this.userUID}`);
-      await updateDoc(docRef, {
-        uid: this.userUID,
-        status: UserStatus.INACTIVE
-      });
-    }
-
     await this.auth.signOut();
   }
 }

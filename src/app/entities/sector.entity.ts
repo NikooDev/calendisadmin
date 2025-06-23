@@ -6,7 +6,7 @@ export class SectorEntity extends RestEntity {
 
   public color!: string;
 
-  public teams!: string[];
+  public teams!: [];
 
   public address!: AdressRecord[];
 

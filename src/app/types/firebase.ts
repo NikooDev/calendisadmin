@@ -1,7 +1,7 @@
 export interface WhereSearchParameter {
 	where: string;
-	operator: '>=' | '==' | '<=' | '!=' | '<' | 'array-contains' | 'array-contains-any' | 'in' | 'not-in';
-	value: string | Date | number | boolean | string[];
+	operator: '>=' | '==' | '<=' | '!=' | 'array-contains' | 'array-contains-any' | 'in' | 'not-in';
+	value: string | Date | number | boolean;
 }
 
 export interface SortSearchParameter {

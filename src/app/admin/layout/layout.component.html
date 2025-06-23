@@ -5,9 +5,9 @@
               (click)="toggleSidebar()"
               [ngClass]="{'bg-pink-600': $isSidebarOpen(), 'bg-theme-500': !$isSidebarOpen(), 'hover:bg-theme-700': !$isSidebarOpen(), 'nav-open': $isSidebarOpen()}"
               class="relative transitions-all duration-200 rounded-full h-11 w-11 mr-4 flex items-center justify-center text-white lg:hidden">
-        <span class="menu-toggle-bar white menu-toggle-bar--top"></span>
-        <span class="menu-toggle-bar white menu-toggle-bar--middle"></span>
-        <span class="menu-toggle-bar white menu-toggle-bar--bottom"></span>
+        <span class="menu-toggle-bar menu-toggle-bar--top"></span>
+        <span class="menu-toggle-bar menu-toggle-bar--middle"></span>
+        <span class="menu-toggle-bar menu-toggle-bar--bottom"></span>
       </button>
       <a [routerLink]="'/admin'" class="text-theme-500 hover:text-pink-600 font-title text-4xl transition-colors duration-200">Calendis</a>
     </div>
@@ -24,13 +24,13 @@
   </div>
 </main>
 
-<aside #sidebar class="fixed left-0 top-20 bg-white layout-shadow rounded-tr-2xl w-64 h-[calc(100dvh-5rem)] z-50 overflow-auto"
+<aside #sidebar class="fixed left-0 top-20 bg-white layout-shadow rounded-tr-2xl w-64 h-[calc(100vh-5rem)] z-50 overflow-auto"
        role="complementary"
        [@slideInOut]="$isSidebarOpen() ? 'open' : 'closed'">
   <nav class="flex flex-col justify-between h-full">
     <ul class="flex-1 pt-5 px-5">
       <li class="mb-3">
-        <a routerLink="/admin/" (click)="toggleSidebar()" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="bg-pink-600 text-white hover:!bg-pink-600 hover:cursor-default" [attr.class]="linkClass">
+        <a routerLink="/admin/" (click)="toggleSidebar()" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="bg-pink-600 text-white" [attr.class]="linkClass">
           <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" height="32" width="32">
             <path d="M11,4V8a1,1,0,0,1-1,1H4A1,1,0,0,1,3,8V4A1,1,0,0,1,4,3h6A1,1,0,0,1,11,4Zm-1,7H4a1,1,0,0,0-1,1v8a1,1,0,0,0,1,1h6a1,1,0,0,0,1-1V12A1,1,0,0,0,10,11Zm10,4H14a1,1,0,0,0-1,1v4a1,1,0,0,0,1,1h6a1,1,0,0,0,1-1V16A1,1,0,0,0,20,15ZM20,3H14a1,1,0,0,0-1,1v8a1,1,0,0,0,1,1h6a1,1,0,0,0,1-1V4A1,1,0,0,0,20,3Z"></path>
           </svg>
@@ -38,7 +38,7 @@
         </a>
       </li>
       <li class="mb-3">
-        <a routerLink="/admin/round" (click)="toggleSidebar()" routerLinkActive="bg-pink-600 text-white hover:!bg-pink-600 hover:cursor-default" [attr.class]="linkClass">
+        <a routerLink="/admin/round" (click)="toggleSidebar()" routerLinkActive="bg-pink-600 text-white" [attr.class]="linkClass">
           <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" height="32" width="32">
             <path d="M21,3.92,15,20.67a.5.5,0,0,1-.47.33h-.16a.51.51,0,0,1-.46-.29l-2.36-5a2,2,0,0,1,.34-2.21l3-3.28a.5.5,0,0,0,0-.69l-.38-.38a.5.5,0,0,0-.69,0l-3.28,3a2,2,0,0,1-2.21.34l-5-2.36A.51.51,0,0,1,3,9.67V9.51A.5.5,0,0,1,3.33,9L20.08,3a.5.5,0,0,1,.52.11l.26.26A.5.5,0,0,1,21,3.92Z"/>
           </svg>
@@ -46,7 +46,7 @@
         </a>
       </li>
       <li class="mb-3">
-        <a routerLink="/admin/sectors" (click)="toggleSidebar()" routerLinkActive="bg-pink-600 text-white hover:!bg-pink-600 hover:cursor-default" [attr.class]="linkClass">
+        <a routerLink="/admin/sectors" (click)="toggleSidebar()" routerLinkActive="bg-pink-600 text-white" [attr.class]="linkClass">
           <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" height="32" width="32">
             <path d="M12,2a8,8,0,0,0-8,8c0,6.22,5.05,6.17,6.26,9.78l.51,1.54a1,1,0,0,0,1,.68h.56a1,1,0,0,0,1-.68l.51-1.54C15,16.17,20,16.22,20,10A8,8,0,0,0,12,2Zm0,11a3,3,0,1,1,3-3A3,3,0,0,1,12,13Z"/>
           </svg>
@@ -54,7 +54,7 @@
         </a>
       </li>
       <li class="mb-3">
-        <a routerLink="/admin/donations" (click)="toggleSidebar()" routerLinkActive="bg-pink-600 text-white hover:!bg-pink-600 hover:cursor-default" [attr.class]="linkClass">
+        <a routerLink="/admin/donations" (click)="toggleSidebar()" routerLinkActive="bg-pink-600 text-white" [attr.class]="linkClass">
           <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" height="32" width="32">
             <path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm1.6,9a.25.25,0,0,1,.21.12.25.25,0,0,1,0,.24l-.61,1.23a.76.76,0,0,1-.67.41H8.92A3.26,3.26,0,0,0,12,15.25a3.21,3.21,0,0,0,2-.67.5.5,0,0,1,.66.05l.53.54a.46.46,0,0,1,.15.38.52.52,0,0,1-.19.36A5,5,0,0,1,7.1,13H6.5a.5.5,0,0,1-.5-.5v-1a.5.5,0,0,1,.5-.5h.6a5,5,0,0,1,8-2.91.52.52,0,0,1,.19.36.46.46,0,0,1-.15.38l-.53.54a.5.5,0,0,1-.66.05,3.21,3.21,0,0,0-2-.67A3.26,3.26,0,0,0,8.92,11Z"/>
           </svg>
@@ -62,7 +62,7 @@
         </a>
       </li>
       <li class="mb-3">
-        <a routerLink="/admin/users" (click)="toggleSidebar()" routerLinkActive="bg-pink-600 text-white hover:!bg-pink-600 hover:cursor-default" [attr.class]="linkClass">
+        <a routerLink="/admin/users" (click)="toggleSidebar()" routerLinkActive="bg-pink-600 text-white" [attr.class]="linkClass">
           <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" height="32" width="32">
             <path d="M16.5,12A2.5,2.5,0,1,0,14,9.5,2.49,2.49,0,0,0,16.5,12ZM9,11A3,3,0,1,0,6,8,3,3,0,0,0,9,11Zm2.76,2a4.91,4.91,0,0,0-1.49,1.76l-.95,1.89A3,3,0,0,0,9.18,19H3a1,1,0,0,1-.89-1.45l1.44-2.89A3,3,0,0,1,6.24,13ZM12,19a1,1,0,0,1-.89-1.45l1-1.9A3,3,0,0,1,14.74,14h3.52a3,3,0,0,1,2.68,1.65l.95,1.9A1,1,0,0,1,21,19Z"></path>
           </svg>
@@ -70,7 +70,7 @@
         </a>
       </li>
       <li class="mb-3">
-        <a routerLink="/admin/chat" (click)="toggleSidebar()" routerLinkActive="bg-pink-600 text-white hover:!bg-pink-600 hover:cursor-default" [attr.class]="linkClass">
+        <a routerLink="/admin/chat" (click)="toggleSidebar()" routerLinkActive="bg-pink-600 text-white" [attr.class]="linkClass">
           <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 60 60" height="28" width="28">
             <path d="M30,1.5c-16.542,0-30,12.112-30,27c0,5.204,1.646,10.245,4.768,14.604c-0.591,6.537-2.175,11.39-4.475,13.689  c-0.304,0.304-0.38,0.769-0.188,1.153C0.275,58.289,0.625,58.5,1,58.5c0.046,0,0.092-0.003,0.139-0.01  c0.405-0.057,9.813-1.411,16.618-5.339C21.621,54.71,25.737,55.5,30,55.5c16.542,0,30-12.112,30-27S46.542,1.5,30,1.5z M16,32.5  c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S18.206,32.5,16,32.5z M30,32.5c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4  S32.206,32.5,30,32.5z M44,32.5c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S46.206,32.5,44,32.5z"></path>
           </svg>
@@ -78,7 +78,7 @@
         </a>
       </li>
       <li class="mb-3">
-        <a routerLink="/admin/history" (click)="toggleSidebar()" routerLinkActive="bg-pink-600 text-white hover:!bg-pink-600 hover:cursor-default" [attr.class]="linkClass">
+        <a routerLink="/admin/history" (click)="toggleSidebar()" routerLinkActive="bg-pink-600 text-white" [attr.class]="linkClass">
           <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" height="32" width="32">
             <path d="M21.5,6h-1a.5.5,0,0,0-.5.5V17a1,1,0,0,1-2,0V6a2,2,0,0,0-2-2H4A2,2,0,0,0,2,6V17a3,3,0,0,0,3,3H19a3,3,0,0,0,3-3V6.5A.5.5,0,0,0,21.5,6ZM15,15.5a.5.5,0,0,1-.5.5h-9a.5.5,0,0,1-.5-.5v-1a.5.5,0,0,1,.5-.5h9a.5.5,0,0,1,.5.5Zm0-4a.5.5,0,0,1-.5.5h-9a.5.5,0,0,1-.5-.5v-3A.5.5,0,0,1,5.5,8h9a.5.5,0,0,1,.5.5Z"/>
           </svg>
@@ -89,7 +89,7 @@
     <div class="h-0.5 w-full bg-slate-300 mb-4"></div>
     <ul class="px-5 pb-5">
       <li class="mb-3">
-        <a routerLink="/admin/help" (click)="toggleSidebar()" routerLinkActive="bg-pink-600 text-white hover:!bg-pink-600 hover:cursor-default" [attr.class]="linkClass">
+        <a routerLink="/admin/help" (click)="toggleSidebar()" routerLinkActive="bg-pink-600 text-white" [attr.class]="linkClass">
           <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" height="32" width="32">
             <path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm1,15.5a.5.5,0,0,1-.5.5h-1a.5.5,0,0,1-.5-.5v-1a.5.5,0,0,1,.5-.5h1a.5.5,0,0,1,.5.5Zm2.88-7.94a2.89,2.89,0,0,1-2,2.73L13,12.6a.13.13,0,0,0-.08.12v.78a.5.5,0,0,1-.5.5h-.76a.5.5,0,0,1-.5-.5v-.78a1.88,1.88,0,0,1,1.29-1.78l.95-.31a1.13,1.13,0,0,0,.76-1.07V9A1.12,1.12,0,0,0,13,7.88H11A1.12,1.12,0,0,0,9.88,9v.5a.5.5,0,0,1-.5.5H8.62a.5.5,0,0,1-.5-.5V9A2.88,2.88,0,0,1,11,6.12h2A2.88,2.88,0,0,1,15.88,9Z"/>
           </svg>
@@ -97,7 +97,7 @@
         </a>
       </li>
       <li class="mb-3">
-        <button (click)="openSupport()" [attr.class]="linkClass+' w-full'">
+        <button [attr.class]="linkClass+' w-full'">
           <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" height="32" width="32">
             <path d="M17,21a10.07,10.07,0,0,1-4.74-1.19l-.45-.25a18,18,0,0,1-7.33-7.33l-.25-.45A10.07,10.07,0,0,1,3,7V6.33a2,2,0,0,1,.59-1.42L5.28,3.22a.75.75,0,0,1,1.18.15L8.71,7.23a1,1,0,0,1-.16,1.21L6.66,10.33a.5.5,0,0,0-.09.59l.35.66a13.53,13.53,0,0,0,5.5,5.49l.66.36a.5.5,0,0,0,.59-.09l1.89-1.89a1,1,0,0,1,1.21-.16l3.86,2.25a.75.75,0,0,1,.15,1.18l-1.69,1.69a2,2,0,0,1-1.42.59Z"/>
           </svg>
@@ -115,39 +115,6 @@
     </ul>
   </nav>
 </aside>
-
-<app-dialog id="support" [overlayClose]="true" maxWidth="500px" maxHeight="600px">
-  <ng-container dialog-title>
-    <h2 class="text-slate-700">Support</h2>
-  </ng-container>
-  <ng-container dialog-content>
-    <div class="flex w-full justify-between items-center text-base md:text-lg font-medium text-slate-700">
-      <p>Par email</p>
-      <a href="mailto:nicolas.tual@outlook.fr" class="text-theme-500 underline hover:no-underline">nicolas.tual{{'@'}}outlook.fr</a>
-    </div>
-    <div class="h-0.5 w-full bg-slate-300 my-4"></div>
-    <div class="flex w-full justify-between items-center text-base md:text-lg font-medium text-slate-700">
-      <div class="leading-6">
-        <p>Par téléphone</p>
-        <p class="text-sm">Demandez un rappel par SMS<br/>du lundi au vendredi de 9h à 20h.</p>
-      </div>
-      <a href="tel:0783887296" class="text-theme-500 underline hover:no-underline font-sans">07 83 88 72 96</a>
-    </div>
-  </ng-container>
-  <ng-container dialog-actions>
-    <div class="flex items-center w-full justify-end gap-3 mt-4">
-      <button (click)="closeSupport()" class="flex-1 font-semibold text-base font-default disabled:opacity-50 disabled:hover:bg-slate-400 disabled:hover:!cursor-default bg-slate-400 hover:bg-slate-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">
-        Fermer
-      </button>
-      <button [routerLink]="'/admin/help'" (click)="closeSupport()" class="flex flex-1 items-center justify-center gap-2 font-semibold text-base disabled:opacity-50 disabled:hover:bg-theme-500 disabled:hover:!cursor-default font-default bg-theme-500 hover:bg-pink-600 text-white py-2 pr-4 pl-3 rounded-lg transition-colors duration-200">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" height="24" width="24">
-          <path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm1,15.5a.5.5,0,0,1-.5.5h-1a.5.5,0,0,1-.5-.5v-1a.5.5,0,0,1,.5-.5h1a.5.5,0,0,1,.5.5Zm2.88-7.94a2.89,2.89,0,0,1-2,2.73L13,12.6a.13.13,0,0,0-.08.12v.78a.5.5,0,0,1-.5.5h-.76a.5.5,0,0,1-.5-.5v-.78a1.88,1.88,0,0,1,1.29-1.78l.95-.31a1.13,1.13,0,0,0,.76-1.07V9A1.12,1.12,0,0,0,13,7.88H11A1.12,1.12,0,0,0,9.88,9v.5a.5.5,0,0,1-.5.5H8.62a.5.5,0,0,1-.5-.5V9A2.88,2.88,0,0,1,11,6.12h2A2.88,2.88,0,0,1,15.88,9Z"/>
-        </svg>
-        <span>Aide</span>
-      </button>
-    </div>
-  </ng-container>
-</app-dialog>
 
 <div *ngIf="!isDesktop" [ngClass]="{'opacity-100': $isSidebarOpen(), 'opacity-0': !$isSidebarOpen(), 'pointer-events-none': !$isSidebarOpen()}" class="fixed bg-black/80 h-full w-full z-40 top-0 right-0 left-0 bottom-0 transition-opacity duration-200"></div>
 <app-toast-host></app-toast-host>

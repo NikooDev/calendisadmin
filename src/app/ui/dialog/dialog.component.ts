@@ -40,12 +40,6 @@ export class DialogComponent {
 	private dialogService = inject(DialogService);
 
 	constructor() {
-    if (window.innerWidth < 500) {
-      this.minWidth = '100vw';
-    } else {
-      this.minWidth = '500px';
-    }
-
 		effect(() => {
 			if (this.id) {
 				this.isOpen = this.dialogService.isOpen(this.id);

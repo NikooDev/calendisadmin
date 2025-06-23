@@ -8,12 +8,10 @@ import {ToastService} from '../../services/toast.service';
 import {ToastTypeEnum} from '../../types/ui';
 import {isEmailRegex} from '../../../utils/constants';
 import {AuthService} from '../../services/auth.service';
-import {FirebaseError} from '@firebase/util'
+import { FirebaseError } from '@firebase/util'
 import {Router} from '@angular/router';
 import {catchError} from '../../handlers/message';
 import {delay} from '../../../utils/functions';
-import {UserService} from '../../services/user.service';
-import {UserStatus} from '../../types/user';
 
 @Component({
   selector: 'app-login',
@@ -39,8 +37,6 @@ export class LoginComponent implements OnInit {
   private router = inject(Router);
 
   private toastService = inject(ToastService);
-
-  private userService = inject(UserService);
 
   public $pending: WritableSignal<boolean> = signal(false);
 
@@ -82,8 +78,7 @@ export class LoginComponent implements OnInit {
     await delay(3000);
 
     try {
-      const userCredential = await this.authService.signIn(email.value, password.value);
-      await this.userService.update({ uid: userCredential.user.uid, status: UserStatus.ACTIVE });
+      await this.authService.signIn(email.value, password.value);
 
       await this.router.navigate(['/admin']);
     } catch (error) {
