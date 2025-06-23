@@ -16,6 +16,8 @@ import {ToastHostComponent} from '../../ui/toast/toast-host/toast-host.component
 import {UserService} from '../../services/user.service';
 import {Subscription} from 'rxjs';
 import {initialName} from '../../../utils/functions';
+import {DialogComponent} from '../../ui/dialog/dialog.component';
+import {DialogService} from '../../services/dialog.service';
 
 @Component({
   selector: 'app-layout-private',
@@ -26,7 +28,8 @@ import {initialName} from '../../../utils/functions';
     RouterLinkActive,
     NgIf,
     ToastHostComponent,
-    AsyncPipe
+    AsyncPipe,
+    DialogComponent
   ],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss',
@@ -51,6 +54,8 @@ export class LayoutPrivateComponent implements OnInit {
   private authService = inject(AuthService);
 
   private userService = inject(UserService);
+
+  private dialogService = inject(DialogService);
 
   private subscriptions: Subscription[] = [];
 
@@ -99,6 +104,14 @@ export class LayoutPrivateComponent implements OnInit {
 
   public async logout() {
     await this.authService.logout();
+  }
+
+  public async openSupport() {
+    await this.dialogService.open('support');
+  }
+
+  public closeSupport() {
+    this.dialogService.close('support');
   }
 
   protected readonly initialName = initialName;

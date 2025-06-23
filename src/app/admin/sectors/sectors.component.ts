@@ -25,11 +25,22 @@ import {
 import {GeoJSONSource, Map as MapLibreMap, MapMouseEvent} from "maplibre-gl";
 import type * as GeoJSON from 'geojson';
 import {Feature, FeatureCollection, LineString, Point, Polygon} from "geojson";
-import {element, scaleIn, slideInDown, slideInSector} from "../../../utils/animations";
+import {element, listUsersSearch, scaleIn, slideInDown, slideInSector} from "../../../utils/animations";
 import {AsyncPipe, NgClass, NgIf, NgStyle} from "@angular/common";
 import {TooltipComponent} from "../../ui/tooltip/tooltip.component";
-import {BehaviorSubject, Subscription} from "rxjs";
-import {AdressRecord, PolygonToSave, PolygonWithMeta} from "../../types/sectors";
+import {
+  BehaviorSubject,
+  debounceTime,
+  distinctUntilChanged,
+  forkJoin,
+  from,
+  of,
+  Subject,
+  Subscription,
+  switchMap,
+  map
+} from "rxjs";
+import {AddressStatus, AdressRecord, PolygonToSave, PolygonWithMeta} from "../../types/sectors";
 import {supabase} from "../../../config/supabase.config";
 import {MapboxGeoJSONFeature} from "mapbox-gl";
 import {SpinnerComponent} from "../../ui/spinner/spinner.component";
@@ -38,7 +49,7 @@ import {DialogComponent} from '../../ui/dialog/dialog.component';
 import {DialogService} from '../../services/dialog.service';
 import {SectorsService} from '../../services/sectors.service';
 import {SectorEntity} from '../../entities/sector.entity';
-import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {SwitchComponent} from '../../ui/switch/switch.component';
 import {
   createPolygonWithMeta,
@@ -46,14 +57,16 @@ import {
   doesIntersectOtherSector,
   findOverlappingPolygons,
   formatArea,
-  getAddressesInSectors,
-  mergeOverlappingPolygons,
+  getAddressesInSectors, initialName,
   mergePolygons
 } from '../../../utils/functions'
 import {debounce} from 'lodash';
 import RBush from 'rbush'
 import {ToastService} from '../../services/toast.service';
 import {ToastTypeEnum} from '../../types/ui';
+import {animate, state, style, transition, trigger} from '@angular/animations';
+import {UserEntity} from '../../entities/user.entity';
+import {UserService} from '../../services/user.service';
 
 @Component({
   selector: 'app-sectors',
@@ -74,16 +87,30 @@ import {ToastTypeEnum} from '../../types/ui';
     DialogComponent,
     ReactiveFormsModule,
     NgStyle,
-    SwitchComponent
+    SwitchComponent,
+    FormsModule
   ],
   templateUrl: './sectors.component.html',
   styleUrl: './sectors.component.scss',
-  animations: [element, slideInDown, scaleIn, slideInSector]
+  animations: [element, slideInDown, scaleIn, slideInSector, listUsersSearch, trigger('slideInOut', [
+    state('open', style({ transform: 'translateX(0)' })),
+    state('closed', style({ transform: 'translateX(-110%)' })),
+    transition('closed => open', [
+      animate('300ms cubic-bezier(0.4, 0, 0.2, 1)')
+    ]),
+    transition('open => closed', [
+      animate('300ms cubic-bezier(0.4, 0, 0.2, 1)')
+    ]),
+  ])]
 })
 export class SectorsComponent implements OnInit, OnDestroy {
   public map!: MapLibreMap;
 
   public sectors$: BehaviorSubject<SectorEntity[]> = new BehaviorSubject([]);
+
+  public usersSearch$: BehaviorSubject<UserEntity[]> = new BehaviorSubject([]);
+
+  public teams$: BehaviorSubject<UserEntity[]> = new BehaviorSubject([]);
 
   public center: [number, number] = [-1.0856476, 47.0034039];
 
@@ -91,15 +118,21 @@ export class SectorsComponent implements OnInit, OnDestroy {
 
   public stylePlan: string = 'https://api.maptiler.com/maps/streets-v2/style.json?key=BDnu8t7usofNcbcmeIBe';
 
-  public styleSatellite: string = 'https://api.maptiler.com/maps/satellite/style.json?key=BDnu8t7usofNcbcmeIBe';
+  public styleSatellite: string = 'https://api.maptiler.com/maps/01978ae2-27ca-70fe-b13a-2b7dfecd985e/style.json?key=BDnu8t7usofNcbcmeIBe';
 
   public $pending: WritableSignal<boolean> = signal(true);
 
   public $pendingSectorForm: WritableSignal<boolean> = signal(false);
 
+  public $pendingSearchUser: WritableSignal<boolean> = signal(false);
+
+  public $firstSearch: WritableSignal<boolean> = signal(false);
+
   public $isSatellite: WritableSignal<boolean> = signal(false);
 
   public $polygons: WritableSignal<PolygonWithMeta[]> = signal([]);
+
+  public $polygonToForceMerge: WritableSignal<PolygonWithMeta | null> = signal(null);
 
   public $selectedPolygonIndex = signal<number | null>(null);
 
@@ -129,6 +162,10 @@ export class SectorsComponent implements OnInit, OnDestroy {
 
   public $addressDetected: WritableSignal<AdressRecord[]> = signal([]);
 
+  public $addressExcluded: WritableSignal<number> = signal(0);
+
+  public $oldAddress: WritableSignal<AdressRecord[]> = signal([]);
+
   public $hoveredSectorUID = signal<string | null>(null);
 
   public $selectedSector: WritableSignal<SectorEntity> = signal<SectorEntity | null>(null);
@@ -137,11 +174,21 @@ export class SectorsComponent implements OnInit, OnDestroy {
 
   public $isAddressMax: WritableSignal<boolean> = signal(false);
 
-  public sectorForm: FormGroup;
-
   public $selectColorName: WritableSignal<string> = signal<string>('');
 
+  public $toggleSectorMenu: WritableSignal<boolean> = signal(true);
+
+  public searchUsers$ = new Subject<string>();
+
+  public isDesktop = window.innerWidth >= 1024;
+
+  public sectorForm: FormGroup;
+
   private maxAddressLimit = 400;
+
+  private userRoot = 'devOXn7hHmPkFRAdnhzEh6XDu0z2';
+
+  private userDev  = 'KMBis43ld7PLqBQVzqWTzVGeaV03';
 
   public colors = [
     { name: 'Red',         hex: '#f43636' },
@@ -173,6 +220,8 @@ export class SectorsComponent implements OnInit, OnDestroy {
 
   private sectorsService = inject(SectorsService);
 
+  private userService = inject(UserService);
+
   private toastService = inject(ToastService);
 
   private subscriptions: Subscription[] = [];
@@ -183,10 +232,14 @@ export class SectorsComponent implements OnInit, OnDestroy {
   @ViewChild('sectorName', { static: true })
   public sectorName!: ElementRef;
 
-  @HostListener('document:click', ['$event'])
-  public onClick() {
-    this.$popupShow.set(false);
-  }
+  @ViewChild('toggleBtn')
+  public toggleBtnRef!: ElementRef<HTMLElement>;
+
+  @ViewChild('menuSector')
+  public menuSector!: ElementRef<HTMLElement>;
+
+  @ViewChild('searchInput')
+  public searchInput!: ElementRef<HTMLInputElement>;
 
   constructor() {
     effect(() => {
@@ -201,8 +254,11 @@ export class SectorsComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.initSectorForm();
+    this.initSearchUsers();
     this.initSectors().then();
     this.initAddresses().then();
+
+    this.$toggleSectorMenu.set(this.isDesktop);
     setTimeout(() => this.$pending.set(false), 1000);
     document.addEventListener('fullscreenchange', this.onFullscreenChange.bind(this));
   }
@@ -212,9 +268,6 @@ export class SectorsComponent implements OnInit, OnDestroy {
     document.removeEventListener('fullscreenchange', this.onFullscreenChange.bind(this));
   }
 
-  /**
-   * Reset drawingPolygon
-   */
   @HostListener('document:keydown.escape')
   onEscape() {
     if (this.$isDrawing()) {
@@ -224,10 +277,29 @@ export class SectorsComponent implements OnInit, OnDestroy {
     }
   }
 
+  @HostListener('window:resize', ['$event'])
+  onResize(event: any) {
+    this.isDesktop = event.target.innerWidth >= 1024;
+    this.$toggleSectorMenu.set(this.isDesktop);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onClickOutside(event: MouseEvent) {
+    if (!this.isDesktop && this.$toggleSectorMenu()) {
+      const clickedInsideSidebar = this.menuSector.nativeElement.contains(event.target as Node);
+      const clickedOnToggleBtn = this.toggleBtnRef.nativeElement.contains(event.target as Node);
+
+      if (!clickedInsideSidebar && !clickedOnToggleBtn) {
+        this.$toggleSectorMenu.set(false);
+      }
+    }
+  }
+
   public initSectorForm() {
     this.sectorForm = this.formBuilder.group({
       uid: [''],
       name: ['', [Validators.required]],
+      city: ['', [Validators.required]],
       color: ['', [Validators.required]]
     });
   }
@@ -261,7 +333,108 @@ export class SectorsComponent implements OnInit, OnDestroy {
     this.subscriptions.push(sectors$);
   }
 
+  public initSearchUsers() {
+    const searchUsers$ = this.searchUsers$
+      .pipe(
+        debounceTime(200),
+        distinctUntilChanged(),
+        switchMap((value) => {
+          if (value.length === 0) {
+            this.$pendingSearchUser.set(false);
+            return of([]);
+          }
+
+          this.$firstSearch.set(true);
+
+          const firstnameQuery = this.userService.search([
+            { where: 'firstname', operator: '>=', value: value },
+            { where: 'firstname', operator: '<', value: value + '\uf8ff' }
+          ]);
+
+          const lastnameQuery = this.userService.search([
+            { where: 'lastname', operator: '>=', value: value },
+            { where: 'lastname', operator: '<', value: value + '\uf8ff' }
+          ]);
+
+          return forkJoin([from(firstnameQuery), from(lastnameQuery)]).pipe(
+            map(([firstnames, lastnames]) => {
+              const allUsers = [...firstnames, ...lastnames];
+              const uniqueUsers = Array.from(new Map(allUsers.map(user => [user.uid, user])).values());
+
+              this.$pendingSearchUser.set(false);
+              const teams = this.teams$.getValue();
+
+              return uniqueUsers.filter(user =>
+                user.uid !== this.userRoot &&
+                user.uid !== this.userDev &&
+                !teams.some(teamUser => teamUser.uid === user.uid)
+              );
+            })
+          );
+        })
+      )
+      .subscribe((users) => {
+        this.usersSearch$.next(users);
+      });
+
+    this.subscriptions.push(searchUsers$);
+  }
+
+  public searchUsers(event: Event) {
+    const target = event.target as HTMLInputElement;
+
+    this.$pendingSearchUser.set(true);
+
+    this.searchUsers$.next(target.value.trim().toLowerCase());
+  }
+
+  public selectUserSearched(user: UserEntity) {
+    const currentTeams = this.teams$.getValue();
+    this.teams$.next([...currentTeams, user]);
+
+    const currentSearch = this.usersSearch$.getValue();
+    const filteredSearch = currentSearch.filter(u => u.uid !== user.uid);
+    this.usersSearch$.next(filteredSearch);
+  }
+
+  public cancelUsersSearch() {
+    this.teams$.next([]);
+    this.$firstSearch.set(false);
+    this.usersSearch$.next([]);
+    this.searchUsers$.next('');
+    this.searchInput.nativeElement!.value = '';
+  }
+
+  public deleteTeam(user: UserEntity) {
+    const currentTeams = this.teams$.getValue();
+    const updatedTeams = currentTeams.filter(u => u.uid !== user.uid);
+    this.teams$.next(updatedTeams);
+
+    const currentSearch = this.usersSearch$.getValue();
+    const updatedSearch = [...currentSearch, user];
+
+    const deduplicatedSearch = Array.from(new Map(updatedSearch.map(u => [u.uid, u])).values());
+
+    deduplicatedSearch.sort((a, b) => {
+      const aFull = (a.firstname + a.lastname).toLowerCase();
+      const bFull = (b.firstname + b.lastname).toLowerCase();
+      return aFull.localeCompare(bFull);
+    });
+
+    this.usersSearch$.next(deduplicatedSearch);
+  }
+
+  public toggleMenuSector() {
+    if (this.isDesktop) {
+      return;
+    }
+
+    this.$toggleSectorMenu.set(!this.$toggleSectorMenu());
+  }
+
   public selectColor(color: string) {
+    if (this.$pendingSectorForm()) return;
+
     this.sectorForm.patchValue({ color: color });
     this.$selectColorName.set(color);
   }
@@ -270,14 +443,20 @@ export class SectorsComponent implements OnInit, OnDestroy {
     const sectorForm = this.sectorForm.getRawValue() as Partial<SectorEntity>;
 
     const selectedSector = this.$selectedSector();
+    const teams = this.teams$.getValue();
+    const teamUIDs = teams.map(user => user.uid);
 
     this.$pendingSectorForm.set(true);
-    await delay(1500);
+    this.sectorForm.get('name').disable();
+    this.sectorForm.get('city').disable();
+
+    await delay(1000);
 
     if (this.$sectorUpdate()) {
       this.$selectedSector.set({
         ...selectedSector,
         name: sectorForm.name,
+        city: sectorForm.city,
         color: sectorForm.color
       });
 
@@ -306,12 +485,15 @@ export class SectorsComponent implements OnInit, OnDestroy {
       await this.sectorsService.update({
         uid: sectorForm.uid,
         name: sectorForm.name,
+        city: sectorForm.city,
         color: sectorForm.color,
-        polygons: polygonsToSave
+        polygons: polygonsToSave,
+        teams: teamUIDs
       });
     } else {
       await this.sectorsService.create({
         name: sectorForm.name,
+        city: sectorForm.city,
         color: sectorForm.color,
         address: [],
         polygons: [],
@@ -319,16 +501,21 @@ export class SectorsComponent implements OnInit, OnDestroy {
           value: 0,
           unit: 'm²',
         },
-        teams: []
+        teams: teamUIDs
       })
     }
 
+    this.$sectorUpdate.set(false);
+    this.sectorForm.reset();
     this.dialogService.close('createSector');
+    this.$selectedSector.set(selectedSector);
     this.$pendingSectorForm.set(false);
+
+    this.cancelUsersSearch();
   }
 
-  public openDeleteSector() {
-    this.dialogService.open('confirmDeleteSector');
+  public async openDeleteSector() {
+    await this.dialogService.open('confirmDeleteSector');
   }
 
   public cancelDeleteSector() {
@@ -339,7 +526,7 @@ export class SectorsComponent implements OnInit, OnDestroy {
     const sectorForm = this.sectorForm.getRawValue() as Partial<SectorEntity>;
 
     this.$pendingSectorForm.set(true);
-    await delay(1500);
+    await delay(1000);
 
     await this.sectorsService.delete(sectorForm.uid);
     await this.sectorsService.list();
@@ -347,9 +534,12 @@ export class SectorsComponent implements OnInit, OnDestroy {
     this.dialogService.close('createSector');
     this.dialogService.close('confirmDeleteSector');
     this.$pendingSectorForm.set(false);
+
+    this.cancelUsersSearch();
   }
 
   public cancelCreateSector() {
+    this.cancelUsersSearch();
     this.dialogService.close('createSector');
   }
 
@@ -358,6 +548,8 @@ export class SectorsComponent implements OnInit, OnDestroy {
     const polygons = this.$polygons();
 
     if (!sectorSelected) return;
+
+    console.log(sectorSelected)
 
     const sectorUid = sectorSelected.uid;
 
@@ -406,10 +598,15 @@ export class SectorsComponent implements OnInit, OnDestroy {
 
     const formattedTotalArea = formatArea(totalAreaM2);
 
+    const cleanedAddresses = mergedAddresses.map((address) => {
+      const { maxX, maxY, minX, minY, ...rest } = address as AdressRecord & Partial<Record<'maxX' | 'maxY' | 'minX' | 'minY', number>>;
+      return rest;
+    });
+
     const updatedSector: SectorEntity = {
       ...sectorSelected,
       area: formattedTotalArea,
-      address: mergedAddresses,
+      address: cleanedAddresses,
       polygons: sectorsToSave,
     };
 
@@ -430,13 +627,13 @@ export class SectorsComponent implements OnInit, OnDestroy {
     if (polygonCoords.length < 3) return;
 
     try {
-      const allAddressesInPolygon = this.getAddressesInPolygon(polygonCoords, false);
+      const addressesInCurrentPolygon = this.getAddressesInPolygon(polygonCoords, false);
 
-      if (allAddressesInPolygon.length > this.maxAddressLimit) {
+      if (addressesInCurrentPolygon.length > this.maxAddressLimit) {
         this.$isAddressMax.set(true);
         this.toastService.open(
           ToastTypeEnum.ERROR,
-          `Cette zone contient ${allAddressesInPolygon.length} adresses. Limite fixée à ${this.maxAddressLimit} par zone.`,
+          `Cette zone contient ${addressesInCurrentPolygon.length} adresses. Limite fixée à ${this.maxAddressLimit} par zone.`,
           undefined,
           { duration: 5000 }
         );
@@ -446,21 +643,55 @@ export class SectorsComponent implements OnInit, OnDestroy {
 
       const filteredNewAddresses = this.getAddressesInPolygon(polygonCoords, true);
       this.$addressDetected.set(filteredNewAddresses);
+
+      const sectorUid = this.$selectedSector()?.uid;
+      if (!sectorUid) return;
+
+      const allPolygons = this.$polygons();
+      const selectedIndex = this.$selectedPolygonIndex();
+      const selectedPolygon = allPolygons[selectedIndex];
+      if (!selectedPolygon) return;
+
+      const polygonsOfSector = allPolygons.filter(p => p.sectorUid === sectorUid);
+      const otherPolygons = polygonsOfSector.filter(p => p !== selectedPolygon);
+      const addressesInOtherPolygons = otherPolygons.flatMap(p => this.getAddressesInPolygon(p.coordinates, false));
+      const combinedMap = new Map<string, AdressRecord>();
+
+      addressesInCurrentPolygon.forEach(addr => combinedMap.set(addr.id, addr));
+      addressesInOtherPolygons.forEach(addr => combinedMap.set(addr.id, addr));
+
+      const combinedAddresses = Array.from(combinedMap.values());
+      const oldAddress = this.$oldAddress();
+      const currentIds = new Set(combinedAddresses.map(a => a.id));
+      const excluded = oldAddress.filter(a => !currentIds.has(a.id));
+
+      this.$addressExcluded.set(excluded.length);
     } catch (error) {
       console.error('Erreur lors du calcul des adresses dans le polygone', error);
     }
   }
 
-  public openCreateSector(event: MouseEvent, sector?: SectorEntity) {
+  public async openCreateSector(event: MouseEvent, sector?: SectorEntity) {
     event.stopPropagation();
 
     this.sectorForm.reset();
 
     if (sector) {
+      if (sector.teams.length > 0) {
+        const usersTeams = await this.userService.search([{
+          where: 'uid',
+          operator: 'in',
+          value: sector.teams
+        }]);
+
+        this.teams$.next(usersTeams);
+      }
+
       this.$selectColorName.set(sector.color);
       this.sectorForm.patchValue({
         uid: sector.uid,
         name: sector.name,
+        city: sector.city,
         color: sector.color
       });
       this.$sectorUpdate.set(true);
@@ -469,58 +700,25 @@ export class SectorsComponent implements OnInit, OnDestroy {
       this.$sectorUpdate.set(false);
     }
 
-    this.dialogService.open('createSector');
+    await this.dialogService.open('createSector');
   }
 
-  public openDeletePolygon() {
-    this.dialogService.open('confirmDeletePolygon');
+  public async openDeletePolygon() {
+    await this.dialogService.open('confirmDeletePolygon');
   }
 
   public closeConfirmDeletePolygon() {
     this.dialogService.close('confirmDeletePolygon');
   }
 
-  public async closeAlertUnionSector() {
-    this.dialogService.close('alertUnionSector');
-
+  public confirmAlertUnionSector() {
     if (!this.$forceOverlap()) {
+      this.dialogService.cancel('alertUnionSector');
       this.$canClosePolygon.set(true);
       this.$isDrawing.set(false);
       return;
     }
-
-    const current = this.$currentPolygon();
-    if (current.length < 3) return;
-
-    const closedPolygon = [...current];
-    const first = current[0];
-    const last = current[current.length - 1];
-    if (first[0] !== last[0] || first[1] !== last[1]) {
-      closedPolygon.push(first);
-    }
-
-    const selectedSector = this.$selectedSector();
-    if (!selectedSector) return;
-
-    const calculatedArea = formatArea(area(polygon([closedPolygon])));
-
-    const newPolygonWithMeta: PolygonWithMeta = {
-      coordinates: closedPolygon,
-      area: calculatedArea,
-      color: selectedSector.color ?? '#000000',
-      sectorUid: selectedSector.uid ?? ''
-    };
-
-    const polygons = [...this.$polygons()];
-
-    const mergedPolygons = mergeOverlappingPolygons(polygons, newPolygonWithMeta, newPolygonWithMeta.color, newPolygonWithMeta.sectorUid);
-
-    this.$polygons.set(mergedPolygons);
-
-    await this.updateSector();
-
-    this.cancelCurrentPolygon();
-    this.$forceOverlap.set(false);
+    this.dialogService.confirm('alertUnionSector');
   }
 
   public forceOverlap(value: boolean) {
@@ -529,11 +727,15 @@ export class SectorsComponent implements OnInit, OnDestroy {
 
   public selectSector(sector: SectorEntity) {
     this.$selectedSector.set(sector);
+
+    if (this.$toggleSectorMenu() && !this.isDesktop) {
+      this.$toggleSectorMenu.set(false);
+    }
   }
 
   public $selectedSectorUID = computed(() => this.$selectedSector()?.uid ?? null);
 
-  public $currentSectorColor = computed(() => this.$selectedSector()?.color ?? '#234aae');
+  public $currentSectorColor = computed(() => this.$selectedSector()?.color ?? '#ffffff');
 
   public onMapLoad(mapInstance: MapLibreMap) {
     this.map = mapInstance;
@@ -574,6 +776,7 @@ export class SectorsComponent implements OnInit, OnDestroy {
       maxX: addr.lon,
       minY: addr.lat,
       maxY: addr.lat,
+      status: AddressStatus.toDo
     }));
 
     this.addressTree.clear();
@@ -672,6 +875,12 @@ export class SectorsComponent implements OnInit, OnDestroy {
     this.$popupShow.set(false);
   }
 
+  public onScrollZoom() {
+    if (this.$popupShow()) {
+      this.$popupShow.set(false);
+    }
+  }
+
   public async onMapClick(event: MapMouseEvent & EventData) {
     const coord: [number, number] = [event.lngLat.lng, event.lngLat.lat];
 
@@ -708,6 +917,8 @@ export class SectorsComponent implements OnInit, OnDestroy {
         const poly = polygons[i];
         const polyFeature = polygon([poly.coordinates]);
 
+        const sector = this.sectors$.getValue().find(s => s.uid === poly.sectorUid);
+
         if (booleanPointInPolygon(pt, polyFeature)) {
           if (!this.$isEditing() || this.$selectedPolygonIndex() !== i) {
             this.$currentPolygon.set([...poly.coordinates]);
@@ -716,10 +927,19 @@ export class SectorsComponent implements OnInit, OnDestroy {
             this.$isEditing.set(true);
             this.$selectedSector.update(value => ({
               ...value,
+              name: sector.name,
               uid: poly.sectorUid,
               color: poly.color
             }));
           }
+
+          const polygonsOfSector = polygons.filter(p => p.sectorUid === poly.sectorUid);
+          const allAddresses = polygonsOfSector.flatMap(p => this.getAddressesInPolygon(p.coordinates, false));
+          const uniqueAddressesMap = new Map();
+          allAddresses.forEach(addr => uniqueAddressesMap.set(addr.id, addr));
+          const uniqueAddresses = Array.from(uniqueAddressesMap.values());
+
+          this.$oldAddress.set(uniqueAddresses);
 
           this.updateAddressesCountDebounced(poly.coordinates);
 
@@ -859,17 +1079,43 @@ export class SectorsComponent implements OnInit, OnDestroy {
 
     if (editingIndex !== null && editingIndex >= 0 && editingIndex < polygons.length) {
       if (doesIntersectOtherSector(polygons, newPolygonWithMeta, editingIndex)) {
-        this.dialogService.open('alertUnionSector');
+        this.$polygonToForceMerge.set(newPolygonWithMeta);
+
+        const polygonsOfSector = polygons.filter(p => p.sectorUid === selectedSector.uid);
+        const allAddresses = polygonsOfSector.flatMap(p => this.getAddressesInPolygon(p.coordinates, false));
+        const uniqueAddressesMap = new Map<string, AdressRecord>();
+        allAddresses.forEach(addr => uniqueAddressesMap.set(addr.id, addr));
+        const uniqueAddresses = Array.from(uniqueAddressesMap.values());
+        this.$oldAddress.set(uniqueAddresses);
+
         this.$currentPolygon.set(newPolygonWithMeta.coordinates);
-        return;
+
+        try {
+          await this.dialogService.open('alertUnionSector');
+        } catch {
+          return;
+        }
       }
+
       polygons[editingIndex] = newPolygonWithMeta;
       this.$polygons.set(polygons);
     } else {
       if (doesIntersectOtherSector(polygons, newPolygonWithMeta)) {
-        this.dialogService.open('alertUnionSector');
+        this.$polygonToForceMerge.set(newPolygonWithMeta);
+
+        const polygonsOfSector = polygons.filter(p => p.sectorUid === selectedSector.uid);
+        const allAddresses = polygonsOfSector.flatMap(p => this.getAddressesInPolygon(p.coordinates, false));
+        const uniqueAddressesMap = new Map<string, AdressRecord>();
+        allAddresses.forEach(addr => uniqueAddressesMap.set(addr.id, addr));
+        const uniqueAddresses = Array.from(uniqueAddressesMap.values());
+        this.$oldAddress.set(uniqueAddresses);
         this.$currentPolygon.set(newPolygonWithMeta.coordinates);
-        return;
+
+        try {
+          await this.dialogService.open('alertUnionSector');
+        } catch {
+          return;
+        }
       }
 
       const { polygonsToMerge, polygonsToKeep } = findOverlappingPolygons(polygons, newPolygonWithMeta);
@@ -884,7 +1130,7 @@ export class SectorsComponent implements OnInit, OnDestroy {
     }
 
     await this.updateSector();
-
+    this.toastService.open(ToastTypeEnum.SUCCESS, 'La zone a bien été enregistrée.');
     this.cancelCurrentPolygon();
   }
 
@@ -892,6 +1138,7 @@ export class SectorsComponent implements OnInit, OnDestroy {
     this.$currentPolygon.set([]);
     this.$canClosePolygon.set(false);
     this.$selectedPolygonIndex.set(null);
+    this.$oldAddress.set([]);
     this.$isDrawing.set(false);
     this.$isEditing.set(false);
   }
@@ -973,6 +1220,7 @@ export class SectorsComponent implements OnInit, OnDestroy {
 
     this.$polygons.set(polygons);
     this.$addressDetected.set([]);
+    this.$oldAddress.set([]);
     this.$currentPolygon.set([]);
     this.$canClosePolygon.set(false);
     this.$selectedPolygonIndex.set(null);
@@ -1293,4 +1541,5 @@ export class SectorsComponent implements OnInit, OnDestroy {
       features,
     };
   });
+  protected readonly initialName = initialName;
 }

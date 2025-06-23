@@ -1,8 +1,110 @@
-<section @element>
+<section @element class="h-full">
   <app-title>
     <h2>Utilisateurs</h2>
     <div title-right>
-      <button class="font-semibold text-base font-default bg-theme-500 hover:bg-pink-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">Ajouter un utilisateur</button>
+      <button (click)="openUserDetails()" class="flex items-center gap-2 font-semibold text-base font-default bg-theme-500 hover:bg-pink-600 text-white py-2 md:pl-2 pr-4 pl-4 rounded-lg transition-colors duration-200">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" height="24" width="24" viewBox="0 0 24 24">
+          <path d="M19,11.5v1a.5.5,0,0,1-.5.5H13v5.5a.5.5,0,0,1-.5.5h-1a.5.5,0,0,1-.5-.5V13H5.5a.5.5,0,0,1-.5-.5v-1a.5.5,0,0,1,.5-.5H11V5.5a.5.5,0,0,1,.5-.5h1a.5.5,0,0,1,.5.5V11h5.5A.5.5,0,0,1,19,11.5Z"/>
+        </svg>
+        <span class="hidden md:flex">Ajouter un utilisateur</span>
+      </button>
     </div>
   </app-title>
+
+  <div class="box-shadow overflow-hidden rounded-2xl mt-4 mb-4">
+    <form method="post" class="p-4 bg-white rounded-t-2xl w-full border-b-2 border-theme-50 relative text-slate-500">
+      <svg class="absolute left-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" height="24" width="24" viewBox="0 0 24 24">
+        <path d="M20.85,19.44l-4-4a2.44,2.44,0,0,0-.43-.35l-1-.69h0A7,7,0,1,0,10,17a7,7,0,0,0,4.37-1.53h0l.75,1a2.6,2.6,0,0,0,.3.36l4,4a.5.5,0,0,0,.71,0l.7-.7A.5.5,0,0,0,20.85,19.44ZM10,15a5,5,0,1,1,5-5A5,5,0,0,1,10,15Z"/>
+      </svg>
+      <input type="text" placeholder="Rechercher un utilisateur" (input)="filterUsers($event)" class="w-full focus-within:outline-0 pl-8 pr-4 font-medium text-slate-800 placeholder:text-slate-500">
+    </form>
+
+    <div class="overflow-auto" *ngIf="(users$ | async) as users">
+      <app-table *ngIf="users.length !== 0" [datas]="users" [columns]="displayedColumns" (callback)="openUserDetails($event)"></app-table>
+      <ng-container *ngIf="users.length === 0">
+        <div class="flex flex-col gap-4 items-center justify-center p-4 md:pt-10 md:pb-10 rounded-b-2xl shadow-md bg-white text-slate-500">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="h-12 w-12 md:h-24 md:w-24" viewBox="0 0 24 24">
+            <path d="M20.85,19.44l-4-4a2.44,2.44,0,0,0-.43-.35l-1-.69h0A7,7,0,1,0,10,17a7,7,0,0,0,4.37-1.53h0l.75,1a2.6,2.6,0,0,0,.3.36l4,4a.5.5,0,0,0,.71,0l.7-.7A.5.5,0,0,0,20.85,19.44ZM10,15a5,5,0,1,1,5-5A5,5,0,0,1,10,15Z"/>
+          </svg>
+          <p class="text-2xl font-semibold text-slate-500">Aucun utilisateur</p>
+        </div>
+      </ng-container>
+    </div>
+  </div>
 </section>
+
+<app-dialog id="userDetailsOrCreate" maxWidth="500px" maxHeight="600px">
+  <ng-container dialog-title>
+    <h2 class="text-slate-700"><span *ngIf="!$isUserUpdated(); else update">Ajouter un utilisateur</span></h2>
+    <ng-template #update>Modifier </ng-template>
+  </ng-container>
+  <ng-container dialog-content>
+    <form (ngSubmit)="saveUserDetails()" method="post" autocomplete="off" [formGroup]="userForm">
+      <div class="flex w-full gap-4">
+        <div class="flex flex-col mb-4 w-full">
+          <label for="lastname" class="mb-1.5 hover:cursor-pointer font-semibold text-slate-500">Nom</label>
+          <input type="text" id="lastname" #userName formControlName="lastname" class="bg-slate-200 focus-within:bg-slate-300 disabled:!cursor-default w-full outline-0 rounded-lg h-12 px-4 font-medium transition-colors duration-300"/>
+        </div>
+        <div class="flex flex-col mb-4 w-full">
+          <label for="firstname" class="mb-1.5 hover:cursor-pointer font-semibold text-slate-500">Prénom</label>
+          <input type="text" id="firstname" formControlName="firstname" class="bg-slate-200 focus-within:bg-slate-300 disabled:!cursor-default w-full outline-0 rounded-lg h-12 px-4 font-medium transition-colors duration-300"/>
+        </div>
+      </div>
+      <div class="flex flex-col mb-4 w-full">
+        <label for="email" class="mb-1.5 hover:cursor-pointer font-semibold text-slate-500">Adresse e-mail</label>
+        <input type="text" id="email" formControlName="email" class="bg-slate-200 focus-within:bg-slate-300 disabled:!cursor-default w-full outline-0 rounded-lg h-12 px-4 font-medium transition-colors duration-300"/>
+      </div>
+      <div class="flex flex-col mb-4 w-full">
+        <label for="role" class="mb-1.5 hover:cursor-pointer font-semibold text-slate-500">Rôle</label>
+        <div class="relative w-full flex items-center text-slate-800">
+          <select id="role" formControlName="role" class="bg-slate-200 w-full hover:cursor-pointer appearance-none disabled:!cursor-default focus-within:bg-slate-300 outline-0 rounded-lg h-12 px-4 font-medium transition-colors duration-300">
+            <option value="user">Utilisateur</option>
+            <option value="admin">Administrateur</option>
+            <option value="admin,user">Administrateur et utilisateur</option>
+          </select>
+          <svg xmlns="http://www.w3.org/2000/svg" class="absolute right-3 pointer-events-none" height="32" width="32" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12.72,15.78a.75.75,0,0,1-.53.22h-.38a.77.77,0,0,1-.53-.22L6.15,10.64a.5.5,0,0,1,0-.71l.71-.71a.49.49,0,0,1,.7,0L12,13.67l4.44-4.45a.5.5,0,0,1,.71,0l.7.71a.5.5,0,0,1,0,.71Z"/>
+          </svg>
+        </div>
+        <p *ngIf="!$isUserUpdated() && initPassword.length > 0" class="font-medium text-slate-700 text-lg mt-4 h-4 mb-8">Mot de passe temporaire de l'utilisateur : <br/><span class="font-semibold">{{ initPassword }}</span></p>
+      </div>
+      <div class="flex items-center w-full justify-end gap-3 mt-8">
+        <button type="button" (click)="openDeleteUser()" *ngIf="$isUserUpdated()" [disabled]="$pendingUserForm()" class="mr-auto font-semibold text-base font-default disabled:opacity-50 disabled:hover:bg-red-500 disabled:hover:!cursor-default bg-red-500 hover:bg-red-600 text-white py-2 px-8 rounded-lg transition-colors duration-200">
+          Supprimer
+        </button>
+        <button type="button" (click)="cancelUserDetailsOrCreate()" [disabled]="$pendingUserForm()" class="flex-1 font-semibold text-base font-default disabled:opacity-50 disabled:hover:bg-slate-400 disabled:hover:!cursor-default bg-slate-400 hover:bg-slate-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">
+          Annuler
+        </button>
+        <button type="submit" [disabled]="!userForm.valid || $pendingUserForm()" class="flex-1 flex items-center justify-center font-semibold text-base disabled:opacity-50 disabled:hover:bg-theme-500 disabled:hover:!cursor-default font-default bg-theme-500 hover:bg-pink-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">
+        <span *ngIf="!$pendingUserForm()">
+          <span *ngIf="$isUserUpdated(); else createUser">Modifier</span>
+          <ng-template #createUser>Ajouter</ng-template>
+        </span>
+          <app-spinner [pending]="$pendingUserForm()" color="#fff" [size]="24" [strokeWidth]="4"></app-spinner>
+        </button>
+      </div>
+    </form>
+  </ng-container>
+</app-dialog>
+
+<app-dialog *ngIf="$userSelected() as user" id="confirmDeleteUser" maxWidth="500px" maxHeight="600px">
+  <ng-container dialog-title>
+    <h2 class="text-slate-700">Confirmer !</h2>
+  </ng-container>
+  <ng-container dialog-content>
+    <div class="flex flex-col mb-4">
+      <p class="font-medium text-base md:text-lg text-slate-700">Voulez-vous vraiment supprimer l'utilisateur<br/>{{ user.firstname.cap() }} {{ user.lastname.cap() }} ?</p>
+    </div>
+  </ng-container>
+  <ng-container dialog-actions>
+    <div class="flex items-center w-full justify-end gap-3">
+      <button (click)="cancelDeleteUser()" [disabled]="$pendingUserForm()" class="font-semibold text-base font-default bg-slate-400 hover:bg-slate-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">
+        Annuler
+      </button>
+      <button (click)="deleteUser()" class="font-semibold text-base font-default bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">
+        <span *ngIf="!$pendingUserForm()">Supprimer</span>
+        <app-spinner [pending]="$pendingUserForm()" color="#fff" [size]="24" [strokeWidth]="4"></app-spinner>
+      </button>
+    </div>
+  </ng-container>
+</app-dialog>

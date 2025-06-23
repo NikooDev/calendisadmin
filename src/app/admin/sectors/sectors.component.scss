@@ -1,5 +1,5 @@
 .sectors-container {
-  height: calc(100vh - 96px - 46px - 2rem);
+  height: calc(100dvh - 96px - 46px - 2rem);
 }
 
 .sectors-container:focus {
@@ -17,4 +17,28 @@ mgl-map {
 
 mgl-map canvas {
   outline: 0;
+}
+
+.left-responsive {
+  left: 1rem;
+  transition: left .3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.left-animate {
+  left: 20rem;
+}
+
+@media screen and (min-width: 1024px) {
+  .left-responsive {
+    left: 20rem;
+  }
+}
+
+.menu-sectors {
+  transform: translateX(-110%);
+  transition: transform 0.5s;
+
+  &.menu-sectors-visible {
+    transform: translateX(0);
+  }
 }

@@ -1,3 +1,16 @@
-<section @element>
-  <app-title>Distribution</app-title>
+<section @element class="round-container">
+  <app-title [border]="false">Distribution</app-title>
+  <div class="rounded-2xl bg-theme-800 round-container box-shadow mt-2 relative flex flex-col items-center justify-center">
+    <ng-template #loading>
+      <app-spinner [pending]="true" color="#fff" [size]="80"></app-spinner>
+    </ng-template>
+    <mgl-map
+      *ngIf="!$pending(); else loading"
+      [style]="$isSatellite() ? styleSatellite : stylePlan"
+      [projection]="{ type: 'globe' }"
+      [center]="center"
+      [zoom]="zoom"
+      (mapLoad)="onMapLoad($event)">
+    </mgl-map>
+  </div>
 </section>

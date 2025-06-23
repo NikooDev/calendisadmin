@@ -13,42 +13,43 @@
 }
 
 .tooltip {
-	@apply flex items-center rounded-md select-none whitespace-nowrap pointer-events-none font-medium text-[.9rem] opacity-0 bg-slate-800 absolute h-[2rem] w-fit z-0 text-white transform translate-x-0 translate-y-0 py-[.3rem] px-2.5;
+	@apply lg:flex hidden items-center rounded-md select-none whitespace-nowrap pointer-events-none font-medium text-[.9rem] bg-slate-900/80 absolute h-[2rem] w-fit z-0 text-white py-[.3rem] px-2.5;
 	transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
+  will-change: opacity, transform;
+  opacity: 0;
 
-	&.visible.top {
-		@apply -top-full;
-	}
+  &.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
 
-	&.visible.bottom {
-		@apply top-full;
-	}
+  &[data-position='top'] {
+    transform: translateY(10px);
+  }
+  &[data-position='top'].visible {
+    transform: translateY(0);
+    opacity: 1;
+  }
 
-	&.center {
-		@apply top-1/2 left-1/2;
-		transform: translate(-50%, 50%);
-	}
-	&.visible.center {
-		transform: translate(-50%, 15%);
-	}
+  &[data-position='bottom'] {
+    transform: translateY(-10px);
+  }
+  &[data-position='bottom'].visible {
+    transform: translateY(0);
+    opacity: 1;
+  }
 
-	&.left {
-		@apply left-0;
-		transform: translate(0, 50%);
-	}
-	&.visible.left {
-		transform: translate(0, 15%);
-	}
+  &[data-position='left'] {
+    transform: translateX(-10px);
+  }
+  &[data-position='left'].visible {
+    transform: translateX(0);
+  }
 
-	&.right {
-		@apply right-0;
-		transform: translate(0, 50%);
-	}
-	&.visible.right {
-		transform: translate(0, 15%);
-	}
-
-	&.visible {
-		@apply opacity-100 z-10;
-	}
+  &[data-position='right'] {
+    transform: translateX(10px);
+  }
+  &[data-position='right'].visible {
+    transform: translateX(0);
+  }
 }

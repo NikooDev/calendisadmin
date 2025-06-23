@@ -1,3 +1,101 @@
-<section @element>
-  <app-title>Tableau de bord</app-title>
+<section>
+  <div @element>
+    <app-title>Tableau de bord</app-title>
+  </div>
+
+  <div class="lg:flex flex-wrap gap-8 mt-8">
+    <div class="flex flex-col flex-1 mb-8">
+      <div @element class="flex-1 bg-white w-full rounded-2xl box-shadow overflow-hidden p-4 self-start mb-8 relative text-theme-500">
+        <h3 class="text-slate-800 font-semibold text-lg pl-2">Récapitulatif de la distribution</h3>
+        <div class="flex flex-col p-8 text-slate-700">
+          <span class="font-bold text-3xl"><span class="font-sans">46,30 €</span> collecté</span>
+          <span class="font-bold text-3xl"><span class="font-sans">52</span> calendriers distribués</span>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" height="300" width="300" fill="currentColor" class="absolute right-10 top-0" viewBox="0 0 24 24">
+          <path d="M22,5.5v5a.5.5,0,0,1-.5.5h-.29a.49.49,0,0,1-.36-.15L19.21,9.21l-5.36,5.35a.48.48,0,0,1-.7,0L10.5,11.91,3.56,18.85a.5.5,0,0,1-.71,0l-.7-.7a.5.5,0,0,1,0-.71l8-8a.48.48,0,0,1,.7,0l2.65,2.65,4.29-4.3L16.15,6.15A.49.49,0,0,1,16,5.79V5.5a.5.5,0,0,1,.5-.5h5A.5.5,0,0,1,22,5.5Z"/>
+        </svg>
+      </div>
+      <div @element class="flex-1 bg-white box-shadow p-4 rounded-2xl w-full self-start">
+        <h3 class="text-slate-800 font-semibold text-lg pl-2">Secteurs</h3>
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 w-full mt-4 grid-responsive" *ngIf="(sectors$ | async) as sectors">
+          @for (sector of sectors; track sector.uid) {
+            <div class="relative group rounded-2xl box-shadow p-4 w-full min-h-60" [ngStyle]="{'background-color': sector.color+'66'}">
+              <div class="bg-black/40 group-hover:bg-black/30 absolute left-0 right-0 top-0 bottom-0 w-full h-full rounded-2xl z-0 transition-colors duration-200"></div>
+              <div class="relative z-10">
+                <p class="font-semibold pl-2 text-white">{{ sector.name }}</p>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+    <div @element class="bg-white rounded-2xl box-shadow p-4 self-start mb-8">
+      <h3 class="text-slate-800 font-semibold text-lg pl-2 mb-4">Distribution</h3>
+      <apx-chart *ngIf="chartOptions" #chart
+                 [series]="chartOptions.series"
+                 [chart]="chartOptions.chart"
+                 [plotOptions]="chartOptions.plotOptions"
+                 [fill]="chartOptions.fill"
+                 [states]="{ hover: { filter: { type: 'darken' } } }"
+                 [labels]="chartOptions.labels"></apx-chart>
+      <div *ngIf="$count() as count" class="text-slate-700 text-sm font-medium">
+        <div class="flex items-center w-full justify-between">
+          <div class="flex gap-2 items-center">
+            <span>Distribués :</span>
+          </div>
+          <span class="flex-1 border border-dotted border-slate-700 mt-2 mx-1"></span>
+          <span class="font-bold text-base font-sans">{{ count.doneWithDistribution }}</span>
+        </div>
+        <div class="flex items-center w-full justify-between">
+          <div class="flex gap-2 items-center">
+            <span>Refus :</span>
+          </div>
+          <span class="flex-1 border border-dotted border-slate-700 mt-2 mx-1"></span>
+          <span class="font-bold text-base font-sans">{{ count.refused }}</span>
+        </div>
+        <div class="flex items-center w-full justify-between">
+          <div class="flex gap-2 items-center">
+            <span>Repasses :</span>
+          </div>
+          <span class="flex-1 border border-dotted border-slate-700 mt-2 mx-1"></span>
+          <span class="font-bold text-base font-sans">{{ count.retake }}</span>
+        </div>
+        <div class="flex items-center w-full justify-between">
+          <div class="flex gap-2 items-center">
+            <span>Absences :</span>
+          </div>
+          <span class="flex-1 border border-dotted border-slate-700 mt-2 mx-1"></span>
+          <span class="font-bold text-base font-sans">{{ count.absence }}</span>
+        </div>
+        <div class="flex items-center w-full justify-between">
+          <div class="flex gap-2 items-center">
+            <span>À ne plus faire :</span>
+          </div>
+          <span class="flex-1 border border-dotted border-slate-700 mt-2 mx-1"></span>
+          <span class="font-bold text-base font-sans">{{ count.noMore }}</span>
+        </div>
+        <div class="flex items-center w-full justify-between">
+          <div class="flex gap-2 items-center">
+            <span>Adresses à faire :</span>
+          </div>
+          <span class="flex-1 border border-dotted border-slate-700 mt-2 mx-1"></span>
+          <span class="font-bold text-base font-sans">{{ count.todo }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="flex lg:flex-nowrap gap-4 flex-wrap mb-8">
+    <div @element class="bg-white rounded-2xl box-shadow p-4 min-w-[252px]">
+      <h3 class="text-slate-800 font-semibold text-lg pl-2">Taux d'acceptation</h3>
+      <div class="mt-4 pl-2">
+        <p class="text-slate-700 text-3xl font-bold font-sans">0%</p>
+      </div>
+    </div>
+    <div @element class="bg-white rounded-2xl box-shadow p-4 min-w-[252px]">
+      <h3 class="text-slate-800 font-semibold text-lg pl-2">Don moyen par calendrier</h3>
+      <div class="mt-4 pl-2">
+        <p class="text-slate-700 text-3xl font-bold font-sans">0%</p>
+      </div>
+    </div>
+  </div>
 </section>

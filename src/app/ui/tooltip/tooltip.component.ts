@@ -14,14 +14,14 @@ export class TooltipComponent implements OnDestroy {
 	@Input({ required: true })
 	public content: string = '';
 
-	@Input()
-	public position: 'top' | 'bottom' = 'bottom';
+  @Input()
+  public position: 'top' | 'bottom' | 'left' | 'right' = 'top';
 
 	@Input()
 	public align: 'center' | 'left' | 'right' = 'left';
 
 	@Input()
-	public offset: number = 0;
+	public offset: number = 4;
 
   @Input()
 	public full: boolean = false;
@@ -41,55 +41,63 @@ export class TooltipComponent implements OnDestroy {
   }
 
   public onMouseEnter() {
-		this.isTooltipVisible = true;
+    this.isTooltipVisible = true;
 
-		const triggerWidth = this.tooltipContainer.nativeElement.offsetWidth;
-		const triggerLeft = this.tooltipContainer.nativeElement.offsetLeft;
+    const trigger = this.tooltipContainer.nativeElement;
+    const tooltip = this.tooltip.nativeElement;
 
-		let tooltipLeft: number;
-		let tooltipWidth: number;
+    const triggerWidth = trigger.offsetWidth;
+    const tooltipWidth = tooltip.offsetWidth;
+    const tooltipHeight = tooltip.offsetHeight;
 
-		switch (this.align) {
-			case 'center':
-				tooltipWidth = this.tooltip.nativeElement.offsetWidth;
-				tooltipLeft = triggerLeft + (triggerWidth - tooltipWidth) / 2;
-				break;
+    if (this.position === 'left') {
+      this.renderer.setStyle(tooltip, 'right', `calc(100% + ${this.offset}px)`);
+      this.renderer.setStyle(
+        tooltip,
+        'top',
+        `calc(50% - ${tooltipHeight / 2}px)`
+      );
+    } else if (this.position === 'right') {
+      this.renderer.setStyle(tooltip, 'left', `calc(100% + ${this.offset}px)`);
+      this.renderer.setStyle(
+        tooltip,
+        'top',
+        `calc(50% - ${tooltipHeight / 2}px)`
+      );
+    } else if (this.position === 'top') {
+      this.renderer.setStyle(
+        tooltip,
+        'top',
+        `calc(-${tooltipHeight + this.offset}px)`
+      );
+      this.renderer.setStyle(
+        tooltip,
+        'left',
+        this.getHorizontalAlign(triggerWidth, tooltipWidth)
+      );
+    } else if (this.position === 'bottom') {
+      this.renderer.setStyle(tooltip, 'top', `calc(100% + ${this.offset}px)`);
+      this.renderer.setStyle(
+        tooltip,
+        'left',
+        this.getHorizontalAlign(triggerWidth, tooltipWidth)
+      );
+    }
 
-			case 'left':
-				tooltipLeft = triggerLeft;
-				break;
+    this.mouseLeaveListener = this.renderer.listen(trigger, 'mouseleave', () => this.onMouseLeave());
+  }
 
-			case 'right':
-				tooltipWidth = this.tooltip.nativeElement.offsetWidth;
-				tooltipLeft = triggerLeft + triggerWidth - tooltipWidth;
-				break;
-
-			default:
-				tooltipLeft = triggerLeft;
-				break;
-		}
-
-		if (this.align === 'center') {
-			this.renderer.setStyle(this.tooltip.nativeElement, 'left', `50%`);
-		} else if (this.align === 'left') {
-			this.renderer.setStyle(this.tooltip.nativeElement, 'left', `${tooltipLeft}px`);
-		} else {
-			this.renderer.setStyle(this.tooltip.nativeElement, 'right', `0`);
-		}
-
-		const triggerHeight = this.tooltipContainer.nativeElement.offsetHeight;
-
-		if (this.position === 'top') {
-			const top = triggerHeight + this.offset;
-			this.renderer.setStyle(this.tooltip.nativeElement, 'top', `calc(-${top}px - ${this.offset}px)`);
-		} else {
-			this.renderer.setStyle(this.tooltip.nativeElement, 'top', '100%');
-		}
-
-    this.mouseLeaveListener = this.renderer.listen(this.tooltipContainer.nativeElement, 'mouseleave', () => {
-      this.onMouseLeave();
-    });
-	}
+  private getHorizontalAlign(triggerWidth: number, tooltipWidth: number): string {
+    switch (this.align) {
+      case 'center':
+        return `calc(50% - ${tooltipWidth / 2}px)`;
+      case 'right':
+        return `${triggerWidth - tooltipWidth}px`;
+      case 'left':
+      default:
+        return `0`;
+    }
+  }
 
 	public onMouseLeave() {
 		this.isTooltipVisible = false;

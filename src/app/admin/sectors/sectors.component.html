@@ -1,19 +1,32 @@
-<app-dialog id="createSector" minWidth="500px" maxWidth="500px" maxHeight="500px">
+<app-dialog id="createSector" maxWidth="500px" class="overflow-hidden">
   <ng-container dialog-title>
     <h2 class="text-slate-700"><span *ngIf="!$sectorUpdate(); else update">Créer un secteur</span></h2>
     <ng-template #update>Modifier {{ sectorForm.get('name').value.cap() }}</ng-template>
   </ng-container>
   <ng-container dialog-content>
-    <form method="post" autocomplete="off" [formGroup]="sectorForm">
+    <form (ngSubmit)="saveSector()" method="post" autocomplete="off" [formGroup]="sectorForm">
       <div class="flex flex-col mb-4">
         <label for="name" class="mb-1.5 hover:cursor-pointer font-semibold text-slate-500">Nom du secteur</label>
-        <input type="text" id="name" [maxlength]="20" #sectorName formControlName="name" class="bg-slate-200 focus-within:bg-slate-300 outline-0 rounded-lg h-12 px-4 font-medium transition-colors duration-300"/>
+        <input type="text" id="name" [maxlength]="20" #sectorName formControlName="name" class="bg-slate-200 disabled:!cursor-default focus-within:bg-slate-300 outline-0 rounded-lg h-12 px-4 font-medium transition-colors duration-300"/>
+      </div>
+      <div class="flex flex-col mb-4">
+        <label for="city" class="mb-1.5 hover:cursor-pointer font-semibold text-slate-500">Commune</label>
+        <div class="relative w-full flex items-center text-slate-800">
+          <select id="city" formControlName="city" class="bg-slate-200 w-full hover:cursor-pointer disabled:!cursor-default appearance-none focus-within:bg-slate-300 outline-0 rounded-lg h-12 px-4 font-medium transition-colors duration-300">
+            <option value="tiffauges">Tiffauges</option>
+            <option value="saint-aubin-des-ormeaux">Saint-Aubin-Des-Ormeaux</option>
+          </select>
+          <svg xmlns="http://www.w3.org/2000/svg" class="absolute right-3 pointer-events-none" height="32" width="32" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12.72,15.78a.75.75,0,0,1-.53.22h-.38a.77.77,0,0,1-.53-.22L6.15,10.64a.5.5,0,0,1,0-.71l.71-.71a.49.49,0,0,1,.7,0L12,13.67l4.44-4.45a.5.5,0,0,1,.71,0l.7.71a.5.5,0,0,1,0,.71Z"/>
+          </svg>
+        </div>
       </div>
       <div class="flex flex-col mb-4">
         <label for="color" class="mb-1.5 hover:cursor-pointer font-semibold text-slate-500">Attribuer une couleur</label>
         <div class="flex flex-wrap gap-3">
           @for (color of colors; track color.name) {
             <div
+              [ngClass]="{'hover:!scale-100': $pendingSectorForm(), 'hover:!cursor-default': $pendingSectorForm()}"
               class="w-7 h-7 rounded-full cursor-pointer hover:scale-125 transition-transform duration-200 flex items-center justify-center"
               [style.background-color]="color.hex"
               [title]="color.hex"
@@ -24,47 +37,88 @@
           }
         </div>
       </div>
-      <div class="flex flex-col mb-4">
+      <div class="flex flex-col mb-6">
         <label for="search" class="mb-1.5 hover:cursor-pointer font-semibold text-slate-500">Créer une équipe</label>
-        <input type="text" id="search" placeholder="Rechercher un utilisateur" class="bg-slate-200 focus-within:bg-slate-300 placeholder:text-slate-500 outline-0 rounded-lg h-12 px-4 font-medium transition-colors duration-300"/>
+        <div class="relative flex items-center w-full">
+          <input type="text" id="search" #searchInput (input)="searchUsers($event)" placeholder="Rechercher un utilisateur" [disabled]="$pendingSectorForm()" class="bg-slate-200 w-full focus-within:bg-slate-300 placeholder:text-slate-500 disabled:!cursor-default outline-0 rounded-lg h-12 px-4 font-medium transition-colors duration-300"/>
+          <span class="absolute right-2">
+            <app-spinner [pending]="$pendingSearchUser()" [size]="32" [strokeWidth]="4" color="#314158"></app-spinner>
+          </span>
+        </div>
+        <div class="overflow-auto max-h-40 mt-4">
+          <div class="flex flex-wrap gap-2" *ngIf="(teams$ | async) as teams">
+            @for (team of teams; track team.uid) {
+              <div (click)="deleteTeam(team)" class="inline-flex items-center gap-1.5 text-slate-700 hover:bg-theme-500 group hover:text-white hover:cursor-pointer duration-200 transition-colors rounded-full py-1 pl-1 pr-2">
+                <div class="bg-theme-500 text-white group-hover:bg-white group-hover:text-theme-500 font-bold text-xs h-6 w-6 flex items-center justify-center rounded-full duration-200 transition-colors">
+                  <svg class="group-hover:opacity-100 opacity-0 absolute transition-opacity duration-200" xmlns="http://www.w3.org/2000/svg" height="20" width="20" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.85,16.44a.5.5,0,0,1,0,.71l-.7.7a.5.5,0,0,1-.71,0L12,13.41,7.56,17.85a.5.5,0,0,1-.71,0l-.7-.7a.5.5,0,0,1,0-.71L10.59,12,6.15,7.56a.5.5,0,0,1,0-.71l.7-.7a.5.5,0,0,1,.71,0L12,10.59l4.44-4.44a.5.5,0,0,1,.71,0l.7.7a.5.5,0,0,1,0,.71L13.41,12Z"/>
+                  </svg>
+                  <span class="group-hover:opacity-0 opacity-100 transition-opacity duration-200">{{ initialName(team.firstname, team.lastname) }}</span>
+                </div>
+                <span class="text-sm font-semibold">{{ team.firstname.cap() }} {{ team.lastname.cap() }}</span>
+              </div>
+            }
+          </div>
+          <div *ngIf="(teams$ | async).length > 0 && (usersSearch$ | async).length > 0 && (searchUsers$ | async)?.length > 0" class="w-full h-0.5 bg-slate-300 mt-2 mb-4"></div>
+          <div [@listUsersSearch]="(usersSearch$ | async)?.length" class="space-y-1 flex flex-col" *ngIf="(searchUsers$ | async)?.length > 0">
+            @for (user of (usersSearch$ | async); track user.uid) {
+              <div (click)="selectUserSearched(user)" class="flex items-center gap-3 text-slate-700 font-medium hover:bg-theme-500 group hover:text-white hover:cursor-pointer duration-200 transition-colors rounded-full py-2 px-2 mr-4">
+                <div class="bg-theme-500 text-white group-hover:bg-white group-hover:text-theme-500 font-bold text-sm h-8 w-8 flex items-center justify-center rounded-full duration-200 transition-colors">{{ initialName(user.firstname, user.lastname) }}</div>
+                <span>{{ user.firstname.cap() }} {{ user.lastname.cap() }}</span>
+              </div>
+            }
+          </div>
+          <div class="flex items-center justify-center" *ngIf="((usersSearch$ | async).length === 0 && $firstSearch()) && (searchUsers$ | async)?.length > 0 && !$pendingSearchUser()">
+            <span class="text-slate-700 font-semibold">Aucun utilisateur trouvé</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center w-full justify-end gap-3 mt-4">
+        <button type="button" *ngIf="$sectorUpdate()" (click)="openDeleteSector()" [disabled]="$pendingSectorForm()" class="mr-auto font-semibold text-base font-default disabled:opacity-50 disabled:hover:bg-red-500 disabled:hover:!cursor-default bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" height="24" width="24">
+            <path d="M20,4.5v1a.5.5,0,0,1-.5.5H4.5A.5.5,0,0,1,4,5.5v-1A.5.5,0,0,1,4.5,4H9V3a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1V4h4.5A.5.5,0,0,1,20,4.5ZM5.87,20.14a2,2,0,0,0,2,1.86h8.28a2,2,0,0,0,2-1.86L19,8H5Z"/>
+          </svg>
+        </button>
+        <button type="button" (click)="cancelCreateSector()" [disabled]="$pendingSectorForm()" class="flex-1 flex items-center justify-center font-semibold text-base font-default disabled:opacity-50 disabled:hover:bg-slate-400 disabled:hover:!cursor-default bg-slate-400 hover:bg-slate-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">
+          Annuler
+        </button>
+        <button type="submit" [disabled]="!sectorForm.valid || $pendingSectorForm()" class="flex-1 flex items-center justify-center font-semibold text-base disabled:opacity-50 disabled:hover:bg-theme-500 disabled:hover:!cursor-default font-default bg-theme-500 hover:bg-pink-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">
+        <span *ngIf="!$pendingSectorForm()">
+          <span *ngIf="$sectorUpdate(); else createSector">Modifier</span>
+          <ng-template #createSector>Ajouter</ng-template>
+        </span>
+          <app-spinner [pending]="$pendingSectorForm()" color="#fff" [size]="24" [strokeWidth]="4"></app-spinner>
+        </button>
       </div>
     </form>
   </ng-container>
-  <ng-container dialog-actions>
-    <div class="flex items-center w-full justify-end gap-3">
-      <button (click)="openDeleteSector()" class="mr-auto font-semibold text-base font-default bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" height="24" width="24">
-          <path d="M20,4.5v1a.5.5,0,0,1-.5.5H4.5A.5.5,0,0,1,4,5.5v-1A.5.5,0,0,1,4.5,4H9V3a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1V4h4.5A.5.5,0,0,1,20,4.5ZM5.87,20.14a2,2,0,0,0,2,1.86h8.28a2,2,0,0,0,2-1.86L19,8H5Z"/>
-        </svg>
-      </button>
-      <button (click)="cancelCreateSector()" [disabled]="$pendingSectorForm()" class="font-semibold text-base font-default disabled:opacity-50 disabled:hover:bg-slate-400 disabled:hover:!cursor-default bg-slate-400 hover:bg-slate-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">
-        Annuler
-      </button>
-      <button (click)="saveSector()" [disabled]="!sectorForm.valid || $pendingSectorForm()" class="font-semibold text-base disabled:opacity-50 disabled:hover:bg-theme-500 disabled:hover:!cursor-default font-default bg-theme-500 hover:bg-pink-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">
-        <span *ngIf="!$pendingSectorForm()">Sauvegarder</span>
-        <app-spinner [pending]="$pendingSectorForm()" color="#fff" [size]="24" [strokeWidth]="4"></app-spinner>
-      </button>
-    </div>
-  </ng-container>
 </app-dialog>
 
-<app-dialog id="alertUnionSector" minWidth="500px" maxWidth="1000px" maxHeight="500px">
+<app-dialog id="alertUnionSector" maxWidth="500px" maxHeight="600px">
   <ng-container dialog-title>
     <h2 class="text-slate-700">Attention !</h2>
   </ng-container>
   <ng-container dialog-content>
     <div class="flex flex-col">
-      <p class="font-medium text-lg text-slate-700 mb-4">Votre nouvelle zone chevauche d'autres secteurs.<br/>Veuillez ajuster certaines frontières pour éviter des doublons.</p>
-      <button (click)="closeAlertUnionSector()" class="self-end font-semibold text-base font-default bg-slate-400 hover:bg-slate-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">OK</button>
-      <div class="flex gap-4 items-center">
-        <app-switch [isChecked]="$forceOverlap()" (change)="forceOverlap($event)"></app-switch>
-        <span class="text-base font-medium text-slate-700">Forcer le chevauchement</span>
+      <p class="font-medium text-lg text-slate-700 mb-3">Votre nouvelle zone chevauche d'autres secteurs.<br/>Veuillez ajuster certaines frontières pour éviter des doublons.</p>
+      <div class="flex items-center gap-3 text-slate-700 mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" height="32" width="32" viewBox="0 0 24 24">
+          <path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm1,13.5a.5.5,0,0,1-.5.5h-1a.5.5,0,0,1-.5-.5v-3a.5.5,0,0,1,.5-.5h1a.5.5,0,0,1,.5.5Zm0-6a.5.5,0,0,1-.5.5h-1a.5.5,0,0,1-.5-.5v-1a.5.5,0,0,1,.5-.5h1a.5.5,0,0,1,.5.5Z"/>
+        </svg>
+        <p class="font-medium text-slate-700 text-sm">Vous pouvez forcer le chevauchement en veillant à ne<br/>pas assigner les mêmes adresses à plusieurs zones.</p>
+      </div>
+      <div class="flex justify-between">
+        <div class="flex gap-4 items-center">
+          <app-switch [isChecked]="$forceOverlap()" (change)="forceOverlap($event)"></app-switch>
+          <span class="text-base font-medium text-slate-700">Forcer le chevauchement</span>
+        </div>
+        <button (click)="confirmAlertUnionSector()" class="self-end font-semibold text-base font-default bg-slate-400 hover:bg-slate-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">OK</button>
       </div>
     </div>
   </ng-container>
 </app-dialog>
 
-<app-dialog id="confirmDeletePolygon" minWidth="500px" maxWidth="1000px" maxHeight="500px">
+<app-dialog id="confirmDeletePolygon" maxWidth="500px" maxHeight="600px">
   <ng-container dialog-title>
     <h2 class="text-slate-700">Confirmer !</h2>
   </ng-container>
@@ -86,14 +140,14 @@
   </ng-container>
 </app-dialog>
 
-<app-dialog id="confirmDeleteSector" minWidth="500px" maxWidth="1000px" maxHeight="500px">
+<app-dialog id="confirmDeleteSector" maxWidth="500px" maxHeight="600px">
   <ng-container dialog-title>
     <h2 class="text-slate-700">Confirmer !</h2>
   </ng-container>
   <ng-container dialog-content>
     <div class="flex flex-col mb-4">
-      <p class="font-medium text-lg text-slate-700">Voulez-vous vraiment supprimer ce secteur ?</p>
-      <p class="font-medium text-lg text-slate-700">Les adresses et les zones associées seront supprimées.</p>
+      <p class="font-medium text-base md:text-lg text-slate-700">Voulez-vous vraiment supprimer ce secteur ?</p>
+      <p class="font-medium text-base md:text-lg text-slate-700">Les adresses et les zones associées seront supprimées.</p>
     </div>
   </ng-container>
   <ng-container dialog-actions>
@@ -116,7 +170,7 @@
       <button (click)="openCreateSector($event)" class="font-semibold text-base font-default lg:hidden bg-theme-500 hover:bg-pink-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">Créer un secteur</button>
     </div>
   </app-title>
-  <div #mapContainer class="rounded-2xl bg-theme-800 sectors-container box-shadow mt-2 relative flex flex-col items-center justify-center">
+  <div #mapContainer class="rounded-2xl overflow-hidden bg-theme-800 sectors-container box-shadow mt-2 relative flex flex-col items-center justify-center">
     <ng-template #loading>
       <app-spinner [pending]="true" color="#fff" [size]="80"></app-spinner>
     </ng-template>
@@ -126,6 +180,7 @@
       [projection]="{ type: 'globe' }"
       [center]="center"
       [zoom]="zoom"
+      (zoomEvt)="onScrollZoom()"
       (mapLoad)="onMapLoad($event)"
       (mapClick)="onMapClick($event)"
       (mapMouseMove)="onMouseMove($event)"
@@ -225,7 +280,7 @@
           id="current-polygon-line"
           source="current-polygon-source"
           type="line"
-          [paint]="{ 'line-color': $currentSectorColor(),'line-dasharray': [3, 3] }"
+          [paint]="{ 'line-color': $currentSectorColor(),'line-dasharray': [3, 3], 'line-width': 2 }"
         ></mgl-layer>
       </ng-container>
 
@@ -298,11 +353,23 @@
         id="final-polygons-line"
         source="final-polygons-source"
         type="line"
-        [paint]="{ 'line-color': ['get', 'color'], 'line-width': 2 }"
+        [paint]="{ 'line-color': ['get', 'color'], 'line-width': [
+          'case',
+          ['==', ['get', 'sectorUid'], $selectedSectorUID()],
+          2,
+          1
+        ] }"
       ></mgl-layer>
     </mgl-map>
-    <div *ngIf="!$pending()" class="absolute top-4 left-80 z-10 flex items-center gap-2">
-      <app-tooltip [content]="'Recentrer la carte'" [offset]="-3" position="top" align="left">
+    <div *ngIf="!$pending()" [ngClass]="{'left-animate': $toggleSectorMenu()}" class="absolute top-4 z-10 flex items-center gap-2 left-responsive">
+      <div class="lg:hidden">
+        <button #toggleBtn (click)="toggleMenuSector()" [ngClass]="{'nav-open': $toggleSectorMenu()}" class="relative group bg-white/90 shadow-md hover:bg-theme-500 hover:text-white text-slate-700 font-semibold h-12 w-12 flex items-center justify-center rounded-lg transition-colors duration-200">
+          <span class="menu-toggle-bar bg-slate-700 group-hover:bg-white menu-toggle-bar--top"></span>
+          <span class="menu-toggle-bar bg-slate-700 group-hover:bg-white menu-toggle-bar--middle"></span>
+          <span class="menu-toggle-bar bg-slate-700 group-hover:bg-white menu-toggle-bar--bottom"></span>
+        </button>
+      </div>
+      <app-tooltip [content]="'Recentrer la carte'" position="bottom" align="left">
         <button
           class="bg-white/90 shadow-md hover:bg-theme-500 hover:text-white text-slate-700 font-semibold h-12 w-12 flex items-center justify-center rounded-lg transition-colors duration-200"
           (click)="initialPosition()"
@@ -312,7 +379,7 @@
           </svg>
         </button>
       </app-tooltip>
-      <app-tooltip [content]="'Se déplacer sur la carte'" [offset]="-3" position="top" align="left">
+      <app-tooltip [content]="'Se déplacer sur la carte'" position="bottom" align="left">
         <button
           [ngClass]="{'bg-theme-500': !$isDrawing(), 'bg-white/90': $isDrawing(), 'text-white': !$isDrawing()}"
           class="shadow-md hover:bg-theme-500 hover:text-white text-slate-700 font-semibold h-12 w-12 flex items-center justify-center rounded-lg transition-colors duration-200"
@@ -323,10 +390,10 @@
           </svg>
         </button>
       </app-tooltip>
-      <app-tooltip *ngIf="!$canClosePolygon() && $selectedSector() != null" [content]="'Ajouter une zone de distribution dans '+$selectedSector().name" [offset]="-3" position="top" align="left">
+      <app-tooltip *ngIf="!$canClosePolygon() && $selectedSector() != null" [content]="'Ajouter une zone dans '+$selectedSector().name" position="bottom" align="left">
         <button
           [ngClass]="{'bg-theme-500': $isDrawing(), 'bg-white/90': !$isDrawing(), 'text-white': $isDrawing()}"
-          class="bg-white/90 shadow-md hover:bg-theme-500 hover:text-white text-slate-700 font-semibold h-12 w-12 flex items-center justify-center rounded-lg transition-colors duration-200"
+          class="bg-white/90 shadow-md hover:bg-theme-500 hidden md:flex hover:text-white text-slate-700 font-semibold h-12 w-12 items-center justify-center rounded-lg transition-colors duration-200"
           (click)="startPolygonDrawing()"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" height="28" width="28">
@@ -336,7 +403,7 @@
       </app-tooltip>
     </div>
     <div *ngIf="!$pending()" class="absolute bottom-4 right-4">
-      <app-tooltip [content]="!$isSatellite() ? 'Vue satellite' : 'Vue par défaut'" [offset]="-3" position="top" align="right">
+      <app-tooltip [content]="!$isSatellite() ? 'Vue satellite' : 'Vue par défaut'" position="top" align="right">
         <button
           class="h-12 w-12 flex items-center justify-center rounded-lg overflow-hidden"
           (click)="toggleMapStyle()"
@@ -346,8 +413,8 @@
         </button>
       </app-tooltip>
     </div>
-    <div *ngIf="!$pending()" class="absolute top-[72.5px] left-80 z-10">
-      <app-tooltip [content]="$isFullScreen() ? 'Quitter le mode plein écran' : 'Mode plein écran'" align="left">
+    <div *ngIf="!$pending()" [ngClass]="{'left-animate': $toggleSectorMenu()}" class="absolute bottom-4 z-10 hidden md:flex left-responsive">
+      <app-tooltip [content]="$isFullScreen() ? 'Quitter le mode plein écran' : 'Mode plein écran'" align="left" position="top">
         <button
           [ngClass]="{'bg-theme-500': $isFullScreen(), 'bg-white/90': !$isFullScreen(), 'text-white': $isFullScreen()}"
           class="bg-white/90 shadow-md hover:bg-theme-500 hover:text-white text-slate-700 font-semibold h-12 w-12 flex items-center justify-center rounded-lg transition-colors duration-200"
@@ -359,7 +426,7 @@
         </button>
       </app-tooltip>
     </div>
-    <div *ngIf="!$pending()" class="absolute bg-white/90 hidden lg:block shadow-md rounded-2xl top-4 left-4 w-72 p-4 sectors-options">
+    <div *ngIf="!$pending()" #menuSector [@slideInOut]="$toggleSectorMenu() ? 'open' : 'closed'" [ngClass]="{'menu-sectors-visible': $toggleSectorMenu()}" class="absolute menu-sectors bg-white/90 transform lg:block shadow-md rounded-2xl top-4 left-4 w-72 p-4 sectors-options overflow-y-auto overflow-x-hidden">
       <button (click)="openCreateSector($event)" class="mb-4 font-semibold text-base font-default w-full bg-theme-500 hover:bg-pink-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">Créer un secteur</button>
       <div [@slideInSector]="(sectors$ | async)?.length">
         @for (sector of (sectors$ | async); track sector.uid) {
@@ -382,8 +449,8 @@
               </span>
             </span>
             <div class="ml-auto">
-              <app-tooltip [content]="'Modifier '+sector.name.cap()">
-                <div [ngClass]="{'hover:bg-white': $selectedSectorUID() === sector.uid, 'hover:text-pink-600': $selectedSectorUID() === sector.uid, 'hover:bg-pink-600': !$selectedSector(), 'hover:text-white': !$selectedSector()}" (click)="openCreateSector($event, sector)" class="p-1.5 rounded-full transition-colors duration-200">
+              <app-tooltip [content]="'Modifier '+sector.name.cap()" position="left" align="left">
+                <div [ngClass]="{'hover:bg-white': $selectedSectorUID() === sector.uid, 'hover:text-pink-600': $selectedSectorUID() === sector.uid, 'hover:bg-pink-600': !$selectedSector() || $selectedSectorUID() !== sector.uid, 'hover:text-white': !$selectedSector() || $selectedSectorUID() !== sector.uid}" (click)="openCreateSector($event, sector)" class="p-1.5 rounded-full transition-colors duration-200">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" height="24" width="24">
                     <path d="M16.81,10a.5.5,0,0,1,0,.7L8.75,18.79a2,2,0,0,1-.68.45L3.73,21a.5.5,0,0,1-.54-.11l0,0A.5.5,0,0,1,3,20.27l1.72-4.34a2,2,0,0,1,.45-.68l8.07-8.07a.5.5,0,0,1,.71,0ZM20.56,4.1l-.66-.66A1.5,1.5,0,0,0,18.84,3h-.76A1.5,1.5,0,0,0,17,3.44L15.19,5.27a.5.5,0,0,0,0,.7L18,8.82a.5.5,0,0,0,.71,0L20.56,7A1.5,1.5,0,0,0,21,5.92V5.16A1.5,1.5,0,0,0,20.56,4.1Z"/>
                   </svg>
@@ -401,12 +468,17 @@
       </ng-container>
     </div>
     <div @slideInDown *ngIf="$canClosePolygon()" class="absolute bg-white shadow-md px-2 min-w-96 pb-2 pt-1.5 rounded-2xl bottom-4">
-      <p class="font-semibold text-slate-700 text-center">{{ $addressDetected().length }} <span *ngIf="$addressDetected().length !== 0">nouvelle<span *ngIf="$addressDetected().length > 1">s</span></span> adresse<span *ngIf="$addressDetected().length > 1">s</span> sélectionnée<span *ngIf="$addressDetected().length > 1">s</span></p>
+      <p class="font-semibold text-slate-700 text-center text-lg">{{ ($oldAddress().length + $addressDetected().length) - $addressExcluded() }} adresse<span *ngIf="(($oldAddress().length + $addressDetected().length) - $addressExcluded()) > 1">s</span></p>
+      <div class="flex items-center justify-center px-5">
+        <p class="font-semibold text-slate-700 text-center text-sm" *ngIf="$addressDetected().length > 0">{{ $addressDetected().length }} adresse<span *ngIf="$addressDetected().length > 1">s</span> sélectionnée<span *ngIf="$addressDetected().length > 1">s</span></p>
+        <p class="mx-1.5 leading-0" *ngIf="$addressExcluded() > 0 && $addressDetected().length > 0">•</p>
+        <p class="font-semibold text-slate-700 text-center text-sm" *ngIf="$addressExcluded() > 0">{{ $addressExcluded() }} adresse<span *ngIf="$addressExcluded() > 1">s</span> supprimée<span *ngIf="$addressExcluded() > 1">s</span></p>
+      </div>
       <div class="flex justify-center gap-2 mt-2">
         <button (click)="cancelCurrentPolygon()" class="font-semibold text-base font-default bg-slate-400 hover:bg-slate-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">
           Annuler
         </button>
-        <button (click)="saveCurrentPolygon()" [disabled]="$isAddressMax()" class="disabled:opacity-50 disabled:hover:bg-theme-500 disabled:hover:!cursor-default font-semibold text-base font-default bg-theme-500 hover:bg-pink-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">
+        <button (click)="saveCurrentPolygon()" [disabled]="$isAddressMax() || $addressDetected().length === 0 && $addressExcluded() === 0" class="disabled:opacity-50 disabled:hover:bg-theme-500 disabled:hover:!cursor-default font-semibold text-base font-default bg-theme-500 hover:bg-pink-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">
           Sauvegarder
         </button>
         <button *ngIf="$selectedPolygonIndex() !== null" (click)="openDeletePolygon()" class="font-semibold text-base font-default bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">

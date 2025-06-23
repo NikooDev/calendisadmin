@@ -1,0 +1,38 @@
+<table>
+	<thead>
+	<tr>
+		<th *ngFor="let col of columns" [style.width]="col.width || 'auto'">
+			{{ col.label }}
+		</th>
+		<th *ngIf="actions && actions.length > 0" class="w-[220px]">Actions</th>
+	</tr>
+	</thead>
+	<tbody>
+	<tr *ngFor="let row of datas" (click)="callback.emit(row)" class="group hover:!bg-slate-800 transition-colors duration-200">
+		<td *ngFor="let col of columns">
+			<ng-container [ngSwitch]="col.type">
+				<ng-container *ngSwitchCase="primitive.string">
+          <span [innerHTML]="col.transformer ? col.transformer(row) : row[col.key]"></span>
+				</ng-container>
+				<ng-container *ngSwitchCase="primitive.number">
+					{{ col.transformer ? col.transformer!(row) : row[col.key] }}
+				</ng-container>
+				<ng-container *ngSwitchCase="primitive.date">
+					{{ col.transformer ? col.transformer!(row) : formatDate(row[col.key]) }}
+				</ng-container>
+			</ng-container>
+		</td>
+		<td *ngIf="actions && actions.length > 0" class="opacity-50 group-hover:opacity-100 transition-opacity duration-300">
+			<button
+				*ngFor="let action of actions"
+				(click)="action.callback(row)"
+				[ngClass]="action.type"
+				[title]="action.title"
+			>
+				<i *ngIf="action.icon" [class]="action.icon"></i>
+				{{ action.title }}
+			</button>
+		</td>
+	</tr>
+	</tbody>
+</table>
