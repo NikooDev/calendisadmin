@@ -146,6 +146,7 @@ export class UsersComponent implements OnInit, OnDestroy {
   public async saveUserDetails() {
     const userForm = this.userForm.getRawValue() as Partial<UserEntity>;
     const rawRoleValue = this.userForm.value.role;
+    const role: UserRole[] = rawRoleValue.split(',').map((val: string) => val.trim() as UserRole);
 
     if (this.$isUserUpdated() && this.$userSelected()) {
       const userSelected = this.$userSelected();
@@ -155,24 +156,22 @@ export class UsersComponent implements OnInit, OnDestroy {
 
         await this.userService.update({
           uid: userSelected.uid,
-          lastname: userForm.lastname ?? userSelected.lastname,
-          firstname: userForm.firstname ?? userSelected.firstname,
-          email: userForm.email ?? userSelected.email,
-          role: userForm.role ?? userSelected.role,
+          lastname: userForm.lastname.toLowerCase().trim() ?? userSelected.lastname.toLowerCase().trim(),
+          firstname: userForm.firstname.toLowerCase().trim() ?? userSelected.firstname.toLowerCase().trim(),
+          email: userForm.email.toLowerCase().trim() ?? userSelected.email.toLowerCase().trim(),
+          role: role ?? userSelected.role,
         });
       }
     } else {
-      const role: UserRole[] = rawRoleValue.split(',') as UserRole[];
-
       await this.pendingForm();
 
       await this.userService.create({
-        lastname: userForm.lastname,
-        firstname: userForm.firstname,
-        email: userForm.email,
+        lastname: userForm.lastname.toLowerCase().trim(),
+        firstname: userForm.firstname.toLowerCase().trim(),
+        email: userForm.email.toLowerCase().trim(),
         role: role,
         badgeChat: 0,
-        avatarID: userForm.lastname+userForm.firstname
+        avatarID: userForm.lastname.toLowerCase().trim()+userForm.firstname.toLowerCase().trim()
       });
     }
 

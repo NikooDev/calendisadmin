@@ -15,7 +15,7 @@
           <span [innerHTML]="col.transformer ? col.transformer(row) : row[col.key]"></span>
 				</ng-container>
 				<ng-container *ngSwitchCase="primitive.number">
-					{{ col.transformer ? col.transformer!(row) : row[col.key] }}
+					<span class="font-sans">{{ col.transformer ? col.transformer!(row) : row[col.key] }}</span>
 				</ng-container>
 				<ng-container *ngSwitchCase="primitive.date">
 					{{ col.transformer ? col.transformer!(row) : formatDate(row[col.key]) }}

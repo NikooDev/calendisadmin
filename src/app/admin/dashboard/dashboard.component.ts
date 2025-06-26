@@ -9,7 +9,9 @@ import {BehaviorSubject, Subscription} from 'rxjs';
 import {SectorEntity} from '../../entities/sector.entity';
 import {AddressStatus} from '../../types/sectors';
 import {AsyncPipe, NgIf, NgStyle} from '@angular/common';
-import {sector} from '@turf/turf';
+import {UserEntity} from '../../entities/user.entity';
+import {UserService} from '../../services/user.service';
+import {initialName} from '../../../utils/functions';
 
 export type ChartOptions = {
   series: ApexNonAxisChartSeries;
@@ -44,6 +46,8 @@ export interface CountAddress {
 export class DashboardComponent implements OnInit, OnDestroy {
   public sectors$: BehaviorSubject<SectorEntity[]> = new BehaviorSubject([]);
 
+  public usersSectors$: BehaviorSubject<UserEntity[]> = new BehaviorSubject([]);
+
   public $count: WritableSignal<CountAddress> = signal({
     todo: 0,
     doneWithDistribution: 0,
@@ -54,6 +58,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   });
 
   private sectorsService = inject(SectorsService);
+
+  private userService = inject(UserService);
 
   private subscriptions: Subscription[] = [];
 
@@ -69,8 +75,27 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   public initSectors() {
-    const sectors$ = this.sectorsService._list().subscribe((sectors) => {
+    const sectors$ = this.sectorsService._list().subscribe(async (sectors) => {
       this.sectors$.next(sectors);
+
+      const allTeamUids = new Set<string>();
+
+      sectors.forEach(sector => {
+        sector.teams.forEach(uid => allTeamUids.add(uid));
+      });
+
+      if (allTeamUids.size === 0) {
+        this.usersSectors$.next([]);
+        return;
+      }
+
+      const uidsArray = Array.from(allTeamUids);
+
+      const assignedUsers = await this.userService.search([
+        { where: 'uid', operator: 'in', value: uidsArray }
+      ]);
+
+      this.usersSectors$.next(assignedUsers);
 
       const count = {
         todo: 0,
@@ -185,5 +210,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
     };
   }
 
-  protected readonly sector = sector;
+  public getRestAddress(sector: SectorEntity) {
+    return sector.address.filter(
+      addr => (addr.status !== AddressStatus.doneWithDistribution && addr.status !== AddressStatus.refused)
+    ).length;
+  }
+
+  public getSectorProgression(sector: SectorEntity): number {
+    const distributed = sector.address.filter(
+      addr => addr.status === AddressStatus.doneWithDistribution
+    ).length;
+
+    const total = sector.address.length;
+
+    if (total === 0) return 0;
+
+    return Math.round((distributed / total) * 100);
+  }
+
+  protected readonly initialName = initialName;
 }

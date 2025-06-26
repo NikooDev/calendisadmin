@@ -35,7 +35,6 @@ import {
   forkJoin,
   from,
   of,
-  Subject,
   Subscription,
   switchMap,
   map
@@ -67,6 +66,7 @@ import {ToastTypeEnum} from '../../types/ui';
 import {animate, state, style, transition, trigger} from '@angular/animations';
 import {UserEntity} from '../../entities/user.entity';
 import {UserService} from '../../services/user.service';
+import {UserRole} from '../../types/user';
 
 @Component({
   selector: 'app-sectors',
@@ -88,7 +88,8 @@ import {UserService} from '../../services/user.service';
     ReactiveFormsModule,
     NgStyle,
     SwitchComponent,
-    FormsModule
+    FormsModule,
+    MapComponent
   ],
   templateUrl: './sectors.component.html',
   styleUrl: './sectors.component.scss',
@@ -107,6 +108,8 @@ export class SectorsComponent implements OnInit, OnDestroy {
   public map!: MapLibreMap;
 
   public sectors$: BehaviorSubject<SectorEntity[]> = new BehaviorSubject([]);
+
+  public assignedUsers$: BehaviorSubject<UserEntity[]> = new BehaviorSubject([]);
 
   public usersSearch$: BehaviorSubject<UserEntity[]> = new BehaviorSubject([]);
 
@@ -178,7 +181,7 @@ export class SectorsComponent implements OnInit, OnDestroy {
 
   public $toggleSectorMenu: WritableSignal<boolean> = signal(true);
 
-  public searchUsers$ = new Subject<string>();
+  public searchUsers$: BehaviorSubject<string> = new BehaviorSubject<string>('');
 
   public isDesktop = window.innerWidth >= 1024;
 
@@ -305,7 +308,7 @@ export class SectorsComponent implements OnInit, OnDestroy {
   }
 
   public async initSectors() {
-    const sectors$ = this.sectorsService._list().subscribe(sectors => {
+    const sectors$ = this.sectorsService._list().subscribe(async sectors => {
       this.sectors$.next(sectors);
 
       const loadedPolygons: PolygonWithMeta[] = [];
@@ -327,10 +330,33 @@ export class SectorsComponent implements OnInit, OnDestroy {
         }
       }
 
+      await this.updateAssignedUsersFromSectors(sectors);
+
       this.$polygons.set(loadedPolygons);
     });
 
     this.subscriptions.push(sectors$);
+  }
+
+  public async updateAssignedUsersFromSectors(sectors: SectorEntity[]) {
+    const allTeamUids = new Set<string>();
+
+    sectors.forEach(sector => {
+      sector.teams.forEach(uid => allTeamUids.add(uid));
+    });
+
+    if (allTeamUids.size === 0) {
+      this.assignedUsers$.next([]);
+      return;
+    }
+
+    const uidsArray = Array.from(allTeamUids);
+
+    const assignedUsers = await this.userService.search([
+      { where: 'uid', operator: 'in', value: uidsArray }
+    ]);
+
+    this.assignedUsers$.next(assignedUsers);
   }
 
   public initSearchUsers() {
@@ -356,18 +382,22 @@ export class SectorsComponent implements OnInit, OnDestroy {
             { where: 'lastname', operator: '<', value: value + '\uf8ff' }
           ]);
 
+          const teams = this.teams$.getValue();
+          const assignedUsers = this.assignedUsers$.getValue();
+
           return forkJoin([from(firstnameQuery), from(lastnameQuery)]).pipe(
             map(([firstnames, lastnames]) => {
               const allUsers = [...firstnames, ...lastnames];
               const uniqueUsers = Array.from(new Map(allUsers.map(user => [user.uid, user])).values());
 
               this.$pendingSearchUser.set(false);
-              const teams = this.teams$.getValue();
 
               return uniqueUsers.filter(user =>
                 user.uid !== this.userRoot &&
                 user.uid !== this.userDev &&
-                !teams.some(teamUser => teamUser.uid === user.uid)
+                user.role.includes(UserRole.USER) &&
+                !teams.some(team => team.uid === user.uid) &&
+                !assignedUsers.some(assigned => assigned.uid === user.uid)
               );
             })
           );
@@ -408,7 +438,6 @@ export class SectorsComponent implements OnInit, OnDestroy {
   public deleteTeam(user: UserEntity) {
     const currentTeams = this.teams$.getValue();
     const updatedTeams = currentTeams.filter(u => u.uid !== user.uid);
-    this.teams$.next(updatedTeams);
 
     const currentSearch = this.usersSearch$.getValue();
     const updatedSearch = [...currentSearch, user];
@@ -421,6 +450,7 @@ export class SectorsComponent implements OnInit, OnDestroy {
       return aFull.localeCompare(bFull);
     });
 
+    this.teams$.next(updatedTeams);
     this.usersSearch$.next(deduplicatedSearch);
   }
 
@@ -803,7 +833,9 @@ export class SectorsComponent implements OnInit, OnDestroy {
     };
   });
 
-  public async selectCluster(_: MouseEvent, feature: MapboxGeoJSONFeature) {
+  public async selectCluster(event: MouseEvent, feature: MapboxGeoJSONFeature) {
+    event.stopPropagation();
+
     const source = this.map.getSource('markers') as GeoJSONSource;
 
     if (!source || !feature?.properties?.['cluster_id']) return;

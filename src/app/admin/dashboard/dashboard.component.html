@@ -4,23 +4,46 @@
   <div class="lg:flex flex-wrap gap-8 mt-8">
     <div class="flex flex-col flex-1 mb-8">
       <div class="flex-1 bg-white w-full rounded-2xl box-shadow overflow-hidden p-4 self-start mb-8 relative text-theme-500">
-        <h3 class="text-slate-800 font-semibold text-lg pl-2">Récapitulatif de la distribution</h3>
+        <h3 class="text-slate-800 font-bold text-lg ml-2 border-b border-slate-300 pb-1">Récapitulatif de la distribution</h3>
         <div class="flex flex-col p-8 text-slate-700">
-          <span class="font-bold text-3xl"><span class="font-sans">46,30 €</span> collecté</span>
-          <span class="font-bold text-3xl"><span class="font-sans">52</span> calendriers distribués</span>
+          <span class="font-bold text-3xl mb-4 lg:mb-0"><span class="font-sans">382,74 €</span> collecté</span>
+          <span class="font-bold text-3xl"><span class="font-sans">88</span> calendriers distribués</span>
         </div>
         <svg xmlns="http://www.w3.org/2000/svg" height="300" width="300" fill="currentColor" class="absolute right-10 top-0 opacity-0 animateSvg" viewBox="0 0 24 24">
           <path d="M22,5.5v5a.5.5,0,0,1-.5.5h-.29a.49.49,0,0,1-.36-.15L19.21,9.21l-5.36,5.35a.48.48,0,0,1-.7,0L10.5,11.91,3.56,18.85a.5.5,0,0,1-.71,0l-.7-.7a.5.5,0,0,1,0-.71l8-8a.48.48,0,0,1,.7,0l2.65,2.65,4.29-4.3L16.15,6.15A.49.49,0,0,1,16,5.79V5.5a.5.5,0,0,1,.5-.5h5A.5.5,0,0,1,22,5.5Z"/>
         </svg>
       </div>
       <div class="flex-1 bg-white box-shadow p-4 rounded-2xl w-full self-start">
-        <h3 class="text-slate-800 font-semibold text-lg pl-2">Secteurs</h3>
+        <h3 class="text-slate-800 font-bold text-lg ml-2 border-b border-slate-300 pb-1">Secteurs</h3>
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 w-full mt-4 grid-responsive" *ngIf="(sectors$ | async) as sectors">
           @for (sector of sectors; track sector.uid) {
-            <div class="relative group rounded-2xl box-shadow p-4 w-full min-h-60" [ngStyle]="{'background-color': sector.color+'66'}">
-              <div class="bg-black/40 group-hover:bg-black/30 absolute left-0 right-0 top-0 bottom-0 w-full h-full rounded-2xl z-0 transition-colors duration-200"></div>
-              <div class="relative z-10">
-                <p class="font-semibold pl-2 text-white">{{ sector.name }}</p>
+            <div class="relative group rounded-2xl box-shadow p-4 w-full min-h-60" [ngStyle]="{'background-color': sector.color+'E6'}">
+              <div class="bg-white/50 group-hover:bg-white/20 absolute left-0 right-0 top-0 bottom-0 w-full h-full rounded-2xl z-0 transition-colors duration-200"></div>
+              <div class="relative z-10 h-full flex flex-col">
+                <p class="font-semibold pl-2 text-slate-800 text-lg">{{ sector.name }}</p>
+                <div class="flex items-center px-2 mt-2">
+                  <p class="font-sans text-lg font-semibold text-slate-700 mr-3">{{ getSectorProgression(sector) }}%</p>
+                  <div class="flex h-6 bg-white box-shadow rounded-full overflow-hidden relative w-full">
+                    <span [ngStyle]="{}" class="h-5 w-full bg-white absolute top-0.5 left-0.5 rounded-full"></span>
+                    <span [ngStyle]="{'width': getSectorProgression(sector)+'%', 'background-color': sector.color+'E6'}" class="h-5 absolute top-0.5 left-0.5 rounded-full"></span>
+                  </div>
+                </div>
+                <div class="flex flex-col w-full mt-4">
+                  <p class="text-slate-700 font-semibold mb-3">Utilisateurs :</p>
+                  <div class="flex flex-wrap mb-4">
+                    @for (teams of (usersSectors$ | async); track teams) {
+                      <ng-container *ngIf="sector.teams.includes(teams.uid)">
+                        <div class="inline-flex items-center gap-2 text-slate-700 duration-200 transition-colors rounded-full py-1 pl-1 pr-2">
+                          <div class="bg-theme-500 text-white font-bold text-xs h-6 w-6 flex items-center justify-center rounded-full duration-200 transition-colors">
+                            <span>{{ initialName(teams.firstname, teams.lastname) }}</span>
+                          </div>
+                          <span class="text-sm font-semibold">{{ teams.firstname.cap() }} {{ teams.lastname.cap() }}</span>
+                        </div>
+                      </ng-container>
+                    }
+                  </div>
+                </div>
+                <p class="flex justify-end text-right text-slate-700 font-semibold mt-auto">Adresses restantes :<span class="font-sans font-bold ml-1"> {{ getRestAddress(sector) }}</span></p>
               </div>
             </div>
           }
@@ -28,7 +51,7 @@
       </div>
     </div>
     <div class="bg-white rounded-2xl box-shadow p-4 self-start mb-8">
-      <h3 class="text-slate-800 font-semibold text-lg pl-2 mb-4">Distribution</h3>
+      <h3 class="text-slate-800 font-bold text-lg ml-2 border-b border-slate-300 pb-1 mb-4">Distribution</h3>
       <apx-chart *ngIf="chartOptions" #chart
                  [series]="chartOptions.series"
                  [chart]="chartOptions.chart"
@@ -36,45 +59,45 @@
                  [fill]="chartOptions.fill"
                  [states]="{ hover: { filter: { type: 'darken' } } }"
                  [labels]="chartOptions.labels"></apx-chart>
-      <div *ngIf="$count() as count" class="text-slate-700 text-sm font-medium">
+      <div *ngIf="$count() as count" class="text-slate-700 text-sm">
         <div class="flex items-center w-full justify-between">
           <div class="flex gap-2 items-center">
-            <span>Distribués :</span>
+            <span class="font-bold">Distribués :</span>
           </div>
           <span class="flex-1 border border-dotted border-slate-700 mt-2 mx-1"></span>
           <span class="font-bold text-base font-sans">{{ count.doneWithDistribution }}</span>
         </div>
         <div class="flex items-center w-full justify-between">
           <div class="flex gap-2 items-center">
-            <span>Refus :</span>
+            <span class="font-bold">Refus :</span>
           </div>
           <span class="flex-1 border border-dotted border-slate-700 mt-2 mx-1"></span>
           <span class="font-bold text-base font-sans">{{ count.refused }}</span>
         </div>
         <div class="flex items-center w-full justify-between">
           <div class="flex gap-2 items-center">
-            <span>Repasses :</span>
+            <span class="font-bold">Repasses :</span>
           </div>
           <span class="flex-1 border border-dotted border-slate-700 mt-2 mx-1"></span>
           <span class="font-bold text-base font-sans">{{ count.retake }}</span>
         </div>
         <div class="flex items-center w-full justify-between">
           <div class="flex gap-2 items-center">
-            <span>Absences :</span>
+            <span class="font-bold">Absences :</span>
           </div>
           <span class="flex-1 border border-dotted border-slate-700 mt-2 mx-1"></span>
           <span class="font-bold text-base font-sans">{{ count.absence }}</span>
         </div>
         <div class="flex items-center w-full justify-between">
           <div class="flex gap-2 items-center">
-            <span>À ne plus faire :</span>
+            <span class="font-bold">À ne plus faire :</span>
           </div>
           <span class="flex-1 border border-dotted border-slate-700 mt-2 mx-1"></span>
           <span class="font-bold text-base font-sans">{{ count.noMore }}</span>
         </div>
         <div class="flex items-center w-full justify-between">
           <div class="flex gap-2 items-center">
-            <span>Adresses à faire :</span>
+            <span class="font-bold">Adresses à faire :</span>
           </div>
           <span class="flex-1 border border-dotted border-slate-700 mt-2 mx-1"></span>
           <span class="font-bold text-base font-sans">{{ count.todo }}</span>
@@ -83,16 +106,16 @@
     </div>
   </div>
   <div class="flex lg:flex-nowrap gap-4 flex-wrap mb-8">
-    <div class="bg-white rounded-2xl box-shadow p-4 min-w-[252px]">
-      <h3 class="text-slate-800 font-semibold text-lg pl-2">Taux d'acceptation</h3>
+    <div class="bg-white rounded-2xl box-shadow p-4 w-full lg:w-auto lg:min-w-[252px]">
+      <h3 class="text-slate-800 font-bold text-lg ml-2 border-b border-slate-300 pb-1">Taux d'acceptation</h3>
       <div class="mt-4 pl-2">
-        <p class="text-slate-700 text-3xl font-bold font-sans">0%</p>
+        <p class="text-slate-700 text-3xl font-bold font-sans">96%</p>
       </div>
     </div>
-    <div class="bg-white rounded-2xl box-shadow p-4 min-w-[252px]">
-      <h3 class="text-slate-800 font-semibold text-lg pl-2">Don moyen par calendrier</h3>
+    <div class="bg-white rounded-2xl box-shadow p-4 w-full lg:w-auto lg:min-w-[252px]">
+      <h3 class="text-slate-800 font-bold text-lg ml-2 border-b border-slate-300 pb-1">Don moyen par calendrier</h3>
       <div class="mt-4 pl-2">
-        <p class="text-slate-700 text-3xl font-bold font-sans">0%</p>
+        <p class="text-slate-700 text-3xl font-bold font-sans">4,38€</p>
       </div>
     </div>
   </div>

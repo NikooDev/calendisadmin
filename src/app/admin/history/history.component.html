@@ -1,3 +1,31 @@
 <section @element>
   <app-title>Historique</app-title>
+
+  <div class="box-shadow overflow-hidden rounded-2xl mt-4 mb-4">
+    <form method="post" class="p-4 bg-white rounded-t-2xl w-full border-b-2 border-theme-50 relative text-slate-500">
+      <svg class="absolute left-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" height="24" width="24" viewBox="0 0 24 24">
+        <path d="M20.85,19.44l-4-4a2.44,2.44,0,0,0-.43-.35l-1-.69h0A7,7,0,1,0,10,17a7,7,0,0,0,4.37-1.53h0l.75,1a2.6,2.6,0,0,0,.3.36l4,4a.5.5,0,0,0,.71,0l.7-.7A.5.5,0,0,0,20.85,19.44ZM10,15a5,5,0,1,1,5-5A5,5,0,0,1,10,15Z"/>
+      </svg>
+      <input type="text" placeholder="Rechercher un utilisateur" (input)="filterUsers($event)" class="w-full focus-within:outline-0 pl-8 pr-4 font-medium text-slate-800 placeholder:text-slate-500">
+    </form>
+
+    <div class="overflow-auto" *ngIf="(histories$ | async) as histories">
+      <div class="fle x flex-col divide-y-2 divide-slate-300 bg-white">
+        @for (history of histories; track history.uid) {
+          <div class="flex gap-8 items-center p-3 text-slate-700">
+            <p class="font-semibold font-sans">{{ history.created | date: 'd MMMM y - HH:mm' }}</p>
+            <p class="font-medium">{{ history.content }}</p>
+          </div>
+        }
+      </div>
+      <ng-container *ngIf="histories.length === 0">
+        <div class="flex flex-col gap-4 items-center justify-center p-4 md:pt-10 md:pb-10 rounded-b-2xl shadow-md bg-white text-slate-500">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="h-12 w-12 md:h-24 md:w-24" viewBox="0 0 24 24">
+            <path d="M20.85,19.44l-4-4a2.44,2.44,0,0,0-.43-.35l-1-.69h0A7,7,0,1,0,10,17a7,7,0,0,0,4.37-1.53h0l.75,1a2.6,2.6,0,0,0,.3.36l4,4a.5.5,0,0,0,.71,0l.7-.7A.5.5,0,0,0,20.85,19.44ZM10,15a5,5,0,1,1,5-5A5,5,0,0,1,10,15Z"/>
+          </svg>
+          <p class="text-2xl font-semibold text-slate-500">Aucune action</p>
+        </div>
+      </ng-container>
+    </div>
+  </div>
 </section>

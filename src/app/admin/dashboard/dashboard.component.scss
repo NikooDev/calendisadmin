@@ -28,6 +28,25 @@
 
 .animateSvg {
   animation: slideIn .5s ease-in-out forwards;
+  display: none;
+}
+
+@media screen and (min-width: 680px) {
+  .animateSvg {
+    display: block;
+  }
+}
+
+@media screen and (min-width: 1024px) {
+  .animateSvg {
+    display: none;
+  }
+}
+
+@media screen and (min-width: 1380px) {
+  .animateSvg {
+    display: block;
+  }
 }
 
 @keyframes slideIn {
